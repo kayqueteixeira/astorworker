@@ -104,10 +104,10 @@ public class Project {
 		logger.info("Finding dependencies");
 
 		dependencies = "";
-		List<String> output = CommandExecutorProcess.execute("find . -type f -name *.jar",projectLocation + "/app/build/intermediates/exploded-aar/com.android.support/");
+		List<String> output = CommandExecutorProcess.execute("find . -type f -name *.jar",projectLocation + "/app/build/intermediates/");
 
 		for(String entry : output)
-			dependencies += project.getAbsolutePath() + "/app/build/intermediates/exploded-aar/com.android.support/" + entry + ":";
+			dependencies += project.getAbsolutePath() + "/app/build/intermediates/" + entry + ":";
 		dependencies += ConfigurationProperties.getProperty("androidjar");
 	}
 
