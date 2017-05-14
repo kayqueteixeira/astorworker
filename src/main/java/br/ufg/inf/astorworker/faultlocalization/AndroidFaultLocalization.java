@@ -64,8 +64,8 @@ public class AndroidFaultLocalization {
 
 		CommandExecutorProcess.execute("chmod -R 777 "+projectLocation);
 
-		//Creating local.properties
-		CommandExecutorProcess.execute("echo sdk.dir=$ANDROID_HOME | tee local.properties", projectLocation);
+		//Copying local.properties
+		CommandExecutorProcess.execute("cp local.properties " + projectLocation);
 
 		instrumentationBuildGradleFullyModified = false;
 		unitBuildGradleFullyModified = false;
@@ -77,7 +77,7 @@ public class AndroidFaultLocalization {
 		deleteAllTestsFromProject(projectLocation);
 
 		// Slow build
-		CommandExecutorProcess.execute("./gradlew build", projectLocation);
+		CommandExecutorProcess.execute("./gradlew build -x test", projectLocation);
 
 		// Modifying build.gradle for the first time
 		appendToBuildGradle(projectLocation, ACTIVATE_COVERAGE_STRING);

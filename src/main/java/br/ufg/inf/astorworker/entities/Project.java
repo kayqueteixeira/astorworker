@@ -187,8 +187,8 @@ public class Project {
 		//Getting all the permissions
 		CommandExecutorProcess.execute("chmod -R 777 " + getProjectName(), project.getParentFile().getAbsolutePath());
 
-		//Creating local.properties
-		CommandExecutorProcess.execute("echo sdk.dir=$ANDROID_HOME | tee local.properties", project.getAbsolutePath());
+		//Copying local.properties
+		CommandExecutorProcess.execute("cp local.properties " + project.getAbsolutePath());
 
 		getProjectInformation();
 
