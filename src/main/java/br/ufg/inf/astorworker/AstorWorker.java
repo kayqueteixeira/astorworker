@@ -220,6 +220,9 @@ public class AstorWorker  {
 
 						logger.info("File " + projectFile.getName() + " received!");
 
+						//Creating local.properties
+						CommandExecutorProcess.execute("echo sdk.dir=$ANDROID_HOME | tee local.properties", projectFile.getAbsolutePath());
+
 						logger.info("Creating a copy of the project for possible fault localization");
 						FileUtils.copyDirectory(projectFile, 
 								new File("workDir/AstorWorker-" + ConfigurationProperties.getProperty("projectname") 
