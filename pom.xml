@@ -53,8 +53,8 @@
     </dependency>
     
   </dependencies>
-  
-  </repositories>
+
+  <repositories>
     <repository>
         <id>jte</id>
         <url>file:///${project.basedir}/lib/jtestex-0.0.1.jar</url>
