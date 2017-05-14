@@ -80,7 +80,7 @@ The second half of the [Astor4Android](https://github.com/kayquesousa/astor4andr
 
 1. To shutdown the headless emulator, execute this command:
 
-	`sudo printf 'auth %s\n kill\n' $(sudo cat ~/.emulator_console_auth_token) | netcat localhost 5554`
+	`sudo printf 'auth %s\nkill\n' $(sudo cat ~/.emulator_console_auth_token) | netcat localhost 5554`
 
 
 ## Execution 
