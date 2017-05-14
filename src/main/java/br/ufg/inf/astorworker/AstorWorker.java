@@ -31,6 +31,7 @@ import fr.inria.astor.core.validation.entity.TestResult;
 import fr.inria.astor.core.validation.validators.TestCasesProgramValidationResult;
 import fr.inria.astor.core.setup.ConfigurationProperties;
 import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
+import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 import br.ufg.inf.astorworker.executors.JavaProjectCompiler;
 import br.ufg.inf.astorworker.validators.ProgramValidator;
 import br.ufg.inf.astorworker.entity.Project;
