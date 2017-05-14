@@ -64,6 +64,9 @@ public class AndroidFaultLocalization {
 
 		CommandExecutorProcess.execute("chmod -R 777 "+projectLocation);
 
+		//Creating local.properties
+		CommandExecutorProcess.execute("echo sdk.dir=$ANDROID_HOME | tee local.properties", projectLocation);
+
 		instrumentationBuildGradleFullyModified = false;
 		unitBuildGradleFullyModified = false;
 
