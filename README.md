@@ -106,7 +106,13 @@ To execute AstorWorker, follow these instructions:
 	`mvn  dependency:build-classpath`  
 	`mvn  dependency:build-classpath | egrep -v "(^\[INFO\]|^\[WARNING\])" | tee astorworker-classpath.txt`  
 
-	You can use the same astorworker-classpath.txt for future executions.  
+	You can use the same astorworker-classpath.txt for future executions. 
+
+2. Create the local.properties file:
+
+	`echo sdk.dir=$ANDROID_HOME | tee local.properties`  
+
+	You can use the same local.properties for future executions. 
 
 3. Run the command  
    `java -cp $(cat astorworker-classpath.txt):target/classes br.ufg.inf.astorworker.AstorWorker`  
