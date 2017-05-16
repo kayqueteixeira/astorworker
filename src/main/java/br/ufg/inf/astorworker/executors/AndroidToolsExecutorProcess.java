@@ -89,15 +89,17 @@ public class AndroidToolsExecutorProcess {
 	public static void installAPK(String apkLocation, int waitTime) throws InterruptedException, IOException, IllegalStateException {
 		List<String> output = CommandExecutorProcess.execute("./adb install "+apkLocation, ConfigurationProperties.getProperty("platformtools"));
 
+		// Emulator bug workaround
+		if(searchForString(output, "Can't find service: package")){
+			logger.info("The android emulator had a problem. Restarting adb...");
+			restartADB();
+			installAPK(apkLocation, waitTime);
+		}
+
 		// Checking if the execution was successful
 		boolean success = searchForString(output, "Success");
 
 		if(!success && !searchForString(output, "INSTALL_FAILED_ALREADY_EXISTS")){
-			if(searchForString(output, "Can't find service: package")){
-				restartADB();
-				installAPK(apkLocation, waitTime);
-			}
-
 			logger.error("Failed to install apk "+apkLocation+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not install apk");
 		}
@@ -109,14 +111,17 @@ public class AndroidToolsExecutorProcess {
 	public static void uninstallAPK(String appPackage, int waitTime) throws InterruptedException, IOException, IllegalStateException {
 		List<String> output = CommandExecutorProcess.execute("./adb uninstall "+appPackage, ConfigurationProperties.getProperty("platformtools"));
 
+		// Emulator bug workaround
+		if(searchForString(output, "Can't find service: package")){
+			logger.info("The android emulator had a problem. Restarting adb...");
+			restartADB();
+			uninstallAPK(appPackage, waitTime);
+		}
+
 		// Checking if the execution was successful
 		boolean success = searchForString(output, "Success");
 
 		if(!success && !searchForString(output, "Exception")){
-			if(searchForString(output, "Can't find service: package")){
-				restartADB();
-				uninstallAPK(appPackage, waitTime);
-			}
 			logger.error("Failed to uninstall "+appPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not uninstall apk");
 		}
@@ -138,7 +143,9 @@ public class AndroidToolsExecutorProcess {
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
 		
+		// Emulator bug workaround
 		if(searchForString(output, "Can't find service: package")){
+			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			runInstrumentationTests(appPackage, classesToExecute, waitTime);
 		}
@@ -159,7 +166,9 @@ public class AndroidToolsExecutorProcess {
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
 
+		//Emulator bug workaround
 		if(searchForString(output, "Can't find service: package")){
+			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			runInstrumentationTests(appPackage, waitTime);
 		}
