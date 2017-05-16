@@ -93,6 +93,11 @@ public class AndroidToolsExecutorProcess {
 		boolean success = searchForString(output, "Success");
 
 		if(!success && !searchForString(output, "INSTALL_FAILED_ALREADY_EXISTS")){
+			if(searchForString(output, "Can't find service: package")){
+				restartADB();
+				installAPK(apkLocation, waitTime);
+			}
+
 			logger.error("Failed to install apk "+apkLocation+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not install apk");
 		}
@@ -108,6 +113,10 @@ public class AndroidToolsExecutorProcess {
 		boolean success = searchForString(output, "Success");
 
 		if(!success && !searchForString(output, "Exception")){
+			if(searchForString(output, "Can't find service: package")){
+				restartADB();
+				uninstallAPK(appPackage, waitTime);
+			}
 			logger.error("Failed to uninstall "+appPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not uninstall apk");
 		}
@@ -129,6 +138,11 @@ public class AndroidToolsExecutorProcess {
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
 		
+		if(searchForString(output, "Can't find service: package")){
+			restartADB();
+			runInstrumentationTests(appPackage, classesToExecute, waitTime);
+		}
+
 		logger.info("Status: SUCCESSFUL");
 		return output;
 	}
@@ -144,6 +158,11 @@ public class AndroidToolsExecutorProcess {
 			logger.error("Failed to run instrumentation tests from package "+appPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
+
+		if(searchForString(output, "Can't find service: package")){
+			restartADB();
+			runInstrumentationTests(appPackage, waitTime);
+		}
 		
 		logger.info("Status: SUCCESSFUL");
 		return output;
@@ -157,6 +176,11 @@ public class AndroidToolsExecutorProcess {
 		}
 
 		return false;
+	}
+
+	private static void restartADB() throws IOException, InterruptedException {
+		CommandExecutorProcess.execute("./adb kill-server", ConfigurationProperties.getProperty("platformtools"));
+		CommandExecutorProcess.execute("./adb start-server", ConfigurationProperties.getProperty("platformtools"));
 	}
 
 }
