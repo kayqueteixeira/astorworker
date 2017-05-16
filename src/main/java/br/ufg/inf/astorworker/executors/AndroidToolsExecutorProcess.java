@@ -90,7 +90,7 @@ public class AndroidToolsExecutorProcess {
 		List<String> output = CommandExecutorProcess.execute("./adb install "+apkLocation, ConfigurationProperties.getProperty("platformtools"));
 
 		// Emulator bug workaround
-		if(searchForString(output, "Can't find service: package")){
+		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			installAPK(apkLocation, waitTime);
@@ -112,7 +112,7 @@ public class AndroidToolsExecutorProcess {
 		List<String> output = CommandExecutorProcess.execute("./adb uninstall "+appPackage, ConfigurationProperties.getProperty("platformtools"));
 
 		// Emulator bug workaround
-		if(searchForString(output, "Can't find service: package")){
+		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			uninstallAPK(appPackage, waitTime);
@@ -144,7 +144,7 @@ public class AndroidToolsExecutorProcess {
 		}
 		
 		// Emulator bug workaround
-		if(searchForString(output, "Can't find service: package")){
+		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			runInstrumentationTests(appPackage, classesToExecute, waitTime);
@@ -167,7 +167,7 @@ public class AndroidToolsExecutorProcess {
 		}
 
 		//Emulator bug workaround
-		if(searchForString(output, "Can't find service: package")){
+		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
 			runInstrumentationTests(appPackage, waitTime);
@@ -190,6 +190,7 @@ public class AndroidToolsExecutorProcess {
 	private static void restartADB() throws IOException, InterruptedException {
 		CommandExecutorProcess.execute("./adb kill-server", ConfigurationProperties.getProperty("platformtools"));
 		CommandExecutorProcess.execute("./adb start-server", ConfigurationProperties.getProperty("platformtools"));
+		logger.info("Adb restarted!");
 	}
 
 }
