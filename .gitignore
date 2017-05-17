@@ -1,3 +1,5 @@
 *.class
 workDir
 target
+local.properties
+astorworker-classpath.txt
