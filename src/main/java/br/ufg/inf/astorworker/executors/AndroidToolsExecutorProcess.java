@@ -93,7 +93,8 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			return installAPK(apkLocation, waitTime);
+			installAPK(apkLocation, waitTime);
+			return; 
 		}
 
 		// Checking if the execution was successful
@@ -115,7 +116,8 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			return uninstallAPK(appPackage, waitTime);
+			uninstallAPK(appPackage, waitTime);
+			return;
 		}
 
 		// Checking if the execution was successful
