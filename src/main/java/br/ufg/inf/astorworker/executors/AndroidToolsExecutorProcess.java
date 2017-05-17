@@ -93,7 +93,7 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			installAPK(apkLocation, waitTime);
+			return installAPK(apkLocation, waitTime);
 		}
 
 		// Checking if the execution was successful
@@ -115,7 +115,7 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			uninstallAPK(appPackage, waitTime);
+			return uninstallAPK(appPackage, waitTime);
 		}
 
 		// Checking if the execution was successful
@@ -147,7 +147,7 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			runInstrumentationTests(appPackage, classesToExecute, waitTime);
+			return runInstrumentationTests(appPackage, classesToExecute, waitTime);
 		}
 
 		logger.info("Status: SUCCESSFUL");
@@ -170,7 +170,7 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			runInstrumentationTests(appPackage, waitTime);
+			return runInstrumentationTests(appPackage, waitTime);
 		}
 		
 		logger.info("Status: SUCCESSFUL");
