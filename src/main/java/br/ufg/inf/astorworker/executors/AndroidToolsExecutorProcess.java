@@ -35,6 +35,29 @@ public class AndroidToolsExecutorProcess {
 		}
 		
 		logger.info("Status: BUILD SUCCESSFUL");
+	}	
+
+	public static List<String> recompileProject(String projectLocation) throws InterruptedException, IOException, IllegalStateException  {
+		logger.info("Recompiling project");
+		List<String> output = CommandExecutorProcess.execute("./gradlew -a -m build -x test", projectLocation);
+
+		// Checking if the execution was successful
+		boolean success = searchForString(output, "BUILD SUCCESSFUL");
+
+		if(!success){
+			logger.error("Failed to recompile project at "+projectLocation+", output:\n\t"+String.join("\n", output));
+			throw new IllegalStateException("Could not recompile the project");
+		}
+		
+		logger.info("Status: BUILD SUCCESSFUL");
+		return output;
+	}
+	
+	public static List<String> runGradleTask(String projectLocation, String gradleTask) throws InterruptedException, IOException, IllegalStateException  {
+		logger.info("Running gradle task \"" + gradleTask + "\"");
+		List<String> output = CommandExecutorProcess.execute("./gradlew -a " + gradleTask, projectLocation);
+		// TODO: find a way the check successfulness
+		return output;
 	}
 
 

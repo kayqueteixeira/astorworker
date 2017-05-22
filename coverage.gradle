@@ -1,0 +1,129 @@
+android {
+    buildTypes {
+        release {
+            testCoverageEnabled true
+        }
+        debug {
+            testCoverageEnabled true
+        }
+    }
+
+    testOptions {
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+            }
+        }
+    }
+}
+
+apply plugin: 'jacoco'
+
+jacoco {
+    toolVersion = '0.7.6.201602180812'
+}
+
+
+
+def buildTypes = android.buildTypes.collect { type -> type.name }
+def productFlavors = android.productFlavors.collect { flavor -> flavor.name }
+
+if (!productFlavors) productFlavors.add('')
+
+productFlavors.each { productFlavorName ->
+    buildTypes.each { buildTypeName ->
+        def sourceName, sourcePath
+        if (!productFlavorName) {
+            sourceName = sourcePath = "${buildTypeName}"
+        } else {
+            sourceName = "${productFlavorName}${buildTypeName.capitalize()}"
+            sourcePath = "${productFlavorName}/${buildTypeName}"
+        }
+        def testTaskName = "test${sourceName.capitalize()}UnitTest"
+
+        println("TASK:${testTaskName}")
+
+        task "${testTaskName}Coverage" (type:JacocoReport) {
+            group = "Reporting"
+            description = "Generate Jacoco coverage reports on the ${sourceName.capitalize()} build."
+
+            classDirectories = fileTree(
+                    dir: "${project.buildDir}/intermediates/classes/${sourcePath}",
+                    excludes: ['**/R.class',
+                               '**/R$*.class',
+                               '**/*$ViewInjector*.*',
+                               '**/*$ViewBinder*.*',
+                               '**/BuildConfig.*',
+                               '**/Manifest*.*']
+            )
+
+            def coverageSourceDirs = [
+                    "src/main/java",
+                    "src/$productFlavorName/java",
+                    "src/$buildTypeName/java"
+            ]
+            additionalSourceDirs = files(coverageSourceDirs)
+            sourceDirectories = files(coverageSourceDirs)
+            executionData = files("${project.buildDir}/jacoco/${testTaskName}.exec")
+            
+            reports {
+                xml.enabled = true
+            }
+        }   
+    }
+}
+
+productFlavors.each { productFlavorName ->
+    buildTypes.each { buildTypeName ->
+        def sourceName, sourcePath
+        if (!productFlavorName) {
+            sourceName = sourcePath = "${buildTypeName}"
+        } else {
+            sourceName = "${productFlavorName}${buildTypeName.capitalize()}"
+            sourcePath = "${productFlavorName}/${buildTypeName}"
+        }
+        def testTaskName = "connected${sourceName.capitalize()}AndroidTest"
+
+        println("TASK:${testTaskName}")
+
+        task "${testTaskName}Coverage" (type: JacocoReport) {
+            group = "Reporting"
+            description = "Generate Jacoco coverage reports after running tests."
+
+            classDirectories = fileTree(
+                dir: "${project.buildDir}/intermediates/classes/${sourcePath}",
+                excludes: ['**/R*.class',
+                           '**/*$InjectAdapter.class',
+                           '**/*$ModuleAdapter.class',
+                           '**/BuildConfig.*',
+                           '**/R.class',
+                           '**/R$*.class',
+                           '**/*$ViewInjector*.*',
+                           '**/*$ViewBinder*.*',
+                           '**/Manifest*.*']
+            )
+
+            def coverageSourceDirs = [
+                        "src/main/java",
+                        "src/$productFlavorName/java",
+                        "src/$buildTypeName/java"
+            ]
+
+            additionalSourceDirs = files(coverageSourceDirs)
+            sourceDirectories = files(coverageSourceDirs)
+            
+            File flavorFile, standardFile;
+            flavorFile = new File("$buildDir/outputs/code-coverage/connected/flavors/${productFlavorName.toUpperCase()}/")
+            standardFile = new File("$buildDir/outputs/code-coverage/connected/")
+
+            if (!productFlavorName.isEmpty() && flavorFile.listFiles() != null)
+                executionData = files(flavorFile.listFiles())
+            else if (productFlavorName.isEmpty() && standardFile.listFiles() != null)
+                executionData = files(standardFile.listFiles())
+
+            reports {
+                xml.enabled = true
+            }
+        }
+    }
+}
