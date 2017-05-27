@@ -57,7 +57,8 @@ public class AstorWorker  {
 		options.addOption("workerport", true, "AstorWorker's port");
 		options.addOption("platformtools", true, "Location of the Android platform tools");
 		options.addOption("buildtools", true, "Location of the Android build tools");
-		options.addOption("androidjar", true, "Location of the android.jar");
+		options.addOption("androidjar", true, "Location of the Android.jar");
+		options.addOption("androidsdk", true, "Location of the Android SDK");
 		options.addOption("key", true, "Key used to sign apk");
 		options.addOption("keypassword", true, "Password used to authenticate the key");
 		options.addOption("help", false, "Print help and usage");
@@ -204,6 +205,10 @@ public class AstorWorker  {
 
 						logger.info("Project name: " + projectName);
 						logger.info("Creating folder on workDir for " + projectName);
+
+						//Deleting old dir if it exists
+						CommandExecutorProcess.execute("rm -r -f workDir/AstorWorker-"+ projectName);
+
 						File workingDir = new File("workDir/AstorWorker-" + projectName);
 						workingDir.mkdir();
 						break;
@@ -241,12 +246,7 @@ public class AstorWorker  {
 
 							if(action.equals("END_FAULT_LOCALIZATION")){
 								logger.info("Fault localization ended");
-
-								AndroidToolsExecutorProcess.uninstallAPK(project.getMainPackage(), WAIT_TIME);
-								AndroidToolsExecutorProcess.uninstallAPK(project.getMainPackage() + ".test", WAIT_TIME);
-								AndroidToolsExecutorProcess.installAPK(
-										project.getLocation() + "/app/build/outputs/apk/app-debug-androidTest.apk", 
-										WAIT_TIME);
+								project.setupTestingEnvironment();
 								break;
 							}
 
@@ -319,6 +319,9 @@ public class AstorWorker  {
 
 		if(cmd.hasOption("androidjar"))
 			ConfigurationProperties.properties.setProperty("androidjar", cmd.getOptionValue("androidjar"));
+
+		if(cmd.hasOption("androidsdk"))
+			ConfigurationProperties.properties.setProperty("androidsdk", cmd.getOptionValue("androidsdk"));
 
 		if (cmd.hasOption("key"))
 			ConfigurationProperties.properties.setProperty("key", cmd.getOptionValue("key"));

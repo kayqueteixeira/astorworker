@@ -31,8 +31,6 @@ import br.ufg.inf.astorworker.TestType;
 public class AndroidFaultLocalization {
 	private static String projectLocation;
 	private static String projectName;
-	private static boolean unitBuildGradleFullyModified;
-	private static boolean instrumentationBuildGradleFullyModified;
 	private static Logger logger = Logger.getRootLogger();
 
 
@@ -50,9 +48,6 @@ public class AndroidFaultLocalization {
 
 		//Copying local.properties
 		CommandExecutorProcess.execute("cp local.properties " + projectLocation);
-
-		instrumentationBuildGradleFullyModified = false;
-		unitBuildGradleFullyModified = false;
 
 		// Moving all the tests to workDir/tests
 		copyAllTests(projectLocation, "workDir/AstorWorker-" + projectName 

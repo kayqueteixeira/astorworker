@@ -154,17 +154,17 @@ public class AndroidToolsExecutorProcess {
 		logger.info("Status: SUCCESSFUL");
 	}
 
-	public static List<String> runInstrumentationTests(String appPackage, List<String> classesToExecute, int waitTime) throws InterruptedException, IOException, IllegalStateException {
+	public static List<String> runInstrumentationTests(String testPackage, List<String> classesToExecute, int waitTime) throws InterruptedException, IOException, IllegalStateException {
 		String testsToRun = String.join(",",classesToExecute);
 		logger.info("Running instrumentation tests: "+testsToRun);
 
-		List<String> output = CommandExecutorProcess.execute("./adb shell am instrument -w -e class "+testsToRun+" "+appPackage+".test/android.support.test.runner.AndroidJUnitRunner", ConfigurationProperties.getProperty("platformtools"));
+		List<String> output = CommandExecutorProcess.execute("./adb shell am instrument -w -e class "+testsToRun+" "+testPackage+"/android.support.test.runner.AndroidJUnitRunner", ConfigurationProperties.getProperty("platformtools"));
 
 		// Checking if the execution was successful
 		boolean errorOccurred = searchForString(output, "INSTRUMENTATION_FAILED");
 
 		if(errorOccurred){
-			logger.error("Failed to run instrumentation tests "+testsToRun+" on package "+appPackage+", output:\n\t"+String.join("\n", output));
+			logger.error("Failed to run instrumentation tests "+testsToRun+" on package "+testPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
 		
@@ -172,22 +172,22 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			return runInstrumentationTests(appPackage, classesToExecute, waitTime);
+			return runInstrumentationTests(testPackage, classesToExecute, waitTime);
 		}
 
 		logger.info("Status: SUCCESSFUL");
 		return output;
 	}
 
-	public static List<String> runInstrumentationTests(String appPackage, int waitTime) throws InterruptedException, IOException, IllegalStateException {
-		logger.info("Running instrumentation tests from package "+appPackage);
-		List<String> output = CommandExecutorProcess.execute("./adb shell am instrument -w "+appPackage+".test/android.support.test.runner.AndroidJUnitRunner", ConfigurationProperties.getProperty("platformtools"));
+	public static List<String> runInstrumentationTests(String testPackage, int waitTime) throws InterruptedException, IOException, IllegalStateException {
+		logger.info("Running instrumentation tests from package "+testPackage);
+		List<String> output = CommandExecutorProcess.execute("./adb shell am instrument -w "+testPackage+"/android.support.test.runner.AndroidJUnitRunner", ConfigurationProperties.getProperty("platformtools"));
 
 		// Checking if the execution was successful
 		boolean errorOccurred = searchForString(output, "INSTRUMENTATION_FAILED");
 
 		if(errorOccurred){
-			logger.error("Failed to run instrumentation tests from package "+appPackage+", output:\n\t"+String.join("\n", output));
+			logger.error("Failed to run instrumentation tests from package "+testPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not run instrumentation tests");
 		}
 
@@ -195,7 +195,7 @@ public class AndroidToolsExecutorProcess {
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			return runInstrumentationTests(appPackage, waitTime);
+			return runInstrumentationTests(testPackage, waitTime);
 		}
 		
 		logger.info("Status: SUCCESSFUL");

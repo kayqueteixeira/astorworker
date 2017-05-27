@@ -45,23 +45,11 @@ public class  InstrumentationTestExecutorProcess {
 			FileUtils.copyDirectory(variant, new File(location+"/app/src/main/java/"));
 			FileUtils.forceDelete(new File(location+"/app/src/main/java/"+mainPackage.replaceAll("\\.","//")+"/R.java"));
 			
-
-			//Generating apk
-			AndroidToolsExecutorProcess.generateAPK(location, waitTime);
-
-			//Signing apk
-			AndroidToolsExecutorProcess.signAPK(location+"/app/build/outputs/apk/app-release-unsigned.apk", waitTime);
-
-			//Removing old apk from device
-			AndroidToolsExecutorProcess.uninstallAPK(mainPackage, waitTime);
-			
-			//Installing apk on device
-			AndroidToolsExecutorProcess.installAPK(location+"/app/build/outputs/apk/app-release-unsigned.apk", waitTime);
+			project.installApplicationOnEmulator();
 	
 			//Running tests
-			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getMainPackage(), classesToExecute, waitTime);
+			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getTestPackage(), classesToExecute, waitTime);
 
-			
 			tr = getTestResult(tr, output);
 			
 			return tr;
