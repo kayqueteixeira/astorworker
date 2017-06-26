@@ -1,0 +1,10 @@
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+project.tasks.withType(Test) {
+    testLogging {
+        events TestLogEvent.FAILED,
+               TestLogEvent.PASSED,
+               TestLogEvent.SKIPPED,
+               TestLogEvent.STANDARD_ERROR,
+               TestLogEvent.STANDARD_OUT
+    }
+}
