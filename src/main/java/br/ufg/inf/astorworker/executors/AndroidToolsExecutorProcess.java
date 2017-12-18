@@ -59,7 +59,7 @@ public class AndroidToolsExecutorProcess {
 		// Checking if the execution was successful
 		boolean success = searchForString(output, "Success");
 
-		if(!success && !searchForString(output, "DELETE_FAILED_INTERNAL_ERROR")){
+		if(!success && !(searchForString(output, "DELETE_FAILED_INTERNAL_ERROR") || searchForString(output, "Unknown package"))){
 			logger.error("Failed to uninstall "+appPackage+", output:\n\t"+String.join("\n", output));
 			throw new IllegalStateException("Could not uninstall "+appPackage);
 		}
