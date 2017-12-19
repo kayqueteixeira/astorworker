@@ -96,8 +96,6 @@ AstorWorker have the following command line arguments:
 | platformtools | Location of the platform-tools folder. Usually at $ANDROID_HOME/platform-tools. |
 | buildtools | Location of the build-tools folder. Usually at $ANDROID_HOME/build-tools/VERSION.
 | androidjar | Location of the android.jar. android.jar is usually found at $ANDROID_HOME/platforms/android-VERSION/android.jar), where VERSION is a number.
-| key | Key used to sign APKs. You can use **key.jks** located at the main directory of AstorWorker or use your own key. |
-| keypassword | Password of the key from the argument -key. For **key.jks**, the password is 123123. |
 
 To execute AstorWorker, follow these instructions:  
 
@@ -120,7 +118,7 @@ To execute AstorWorker, follow these instructions:
 
    Example:  
 
-			java -cp $(cat astorworker-classpath.txt):target/classes br.ufg.inf.astorworker.AstorWorker -hostip 127.0.0.1 -hostport 6665 -workerip 127.0.0.1 -workerport 6666 -platformtools $ANDROID_HOME/platform-tools -buildtools $ANDROID_HOME/build-tools/25.0.0 -androidjar $ANDROID_HOME/platforms/android-25/android.jar -key $(pwd)/key.jks -keypassword 123123  
+			java -cp $(cat astorworker-classpath.txt):target/classes br.ufg.inf.astorworker.AstorWorker -hostip 127.0.0.1 -hostport 6665 -workerip 127.0.0.1 -workerport 6666 -platformtools $ANDROID_HOME/platform-tools -buildtools $ANDROID_HOME/build-tools/25.0.0 -androidjar $ANDROID_HOME/platforms/android-25/android.jar   
 
 
 
