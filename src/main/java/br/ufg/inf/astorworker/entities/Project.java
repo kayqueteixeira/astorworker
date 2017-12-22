@@ -129,7 +129,12 @@ public class Project {
 
 		while((line = br.readLine()) != null){
 			if(line.contains("testApplicationId")){
-				testPackage = line.split("\"")[1];
+				int tempFix = line.split("\"").length;
+				
+				if(tempFix > 1)
+					testPackage = line.split("\"")[1];
+				else
+					testPackage = line.split("\'")[1];
 				break;
 			}
 		}
@@ -147,7 +152,12 @@ public class Project {
 
 		while((line = br.readLine()) != null){
 			if(line.contains("package")){
-				mainPackage = line.split("\"")[1];
+				int tempFix = line.split("\"").length;
+				
+				if(tempFix > 1)
+					mainPackage = line.split("\"")[1];
+				else
+					mainPackage = line.split("\'")[1];
 				break;
 			}
 		}
