@@ -146,8 +146,10 @@ public class Project {
 		String line = null;
 
 		while((line = br.readLine()) != null){
-			if(line.contains("package"))
+			if(line.contains("package")){
 				mainPackage = line.split("\"")[1];
+				break;
+			}
 		}
 		br.close();
 	}
