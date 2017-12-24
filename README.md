@@ -21,59 +21,34 @@ The second half of the [Astor4Android](https://github.com/kayquesousa/astor4andr
 
 ### Create an AVD
 
-1. Go to the tools location inside the Android SDK folder:
+1. Go to the tools/bin folder:
 
-	`cd $ANDROID_HOME/tools`  
+	`cd $ANDROID_HOME/tools/bin`  
 
-2. Get the SDK list:
+2. Get the system image list:
 
-	`./android list sdk --extended --no-ui --all`  
+	`./sdkmanager --list | grep "system-image"`  
 
 3. Select a system image version of your preference from the list.
 
-	Some elements from the list follow this pattern:  
+	Example of a system image:  system-images;android-26;google_apis;x86_64 
 
-		id: NUMBER or "SYSTEM_IMAGE"  
-			Type: SystemImage  
-			Desc: STRING  
-				  Revision NUMBER  
-				  Requires SDK Platform Android API NUMBER  
+4. Download the system image:
 
-	The information needed is SYSTEM_IMAGE.  
+	`./sdkmanager "system-images;android-26;google_apis;x86_64"`   
 
-4. Download the System image:
+5. Create the AVD:
 
-	`sudo ./android update sdk -a --no-ui --filter SYSTEM_IMAGE`  
-
-5. Get the target list:  
-
-	`./android list targets`  
-
-6. Select a target from the list
-
-	Elements from the list follow this pattern:  
-
-			id: NUMBER or "TARGET"  
-	 		Name: STRING  
-	 		Type: Platform  
-			API level: NUMBER  
-	 		Revision: NUMBER  
-	 		Skins: STRING, STRING, ...  
-			Tag/ABIs : ABI, ABI, ...  
-
-	The information needed is TARGET and one of the ABIs.  
-
-7. Create the AVD:
-
-	`./android create avd --force -n AVDNAME -t TARGET --abi ABI`
+	`./avdmanager create avd --force -n 'AVDNAME' -k 'system-images;android-26;google_apis;x86_64'`
 
 	Where AVDNAME is a name of your choice.
 
 ### Execute the emulator
 
-1. To run the headless emulator, execute this commands:
+1. To run the headless emulator, execute these commands:
 
 	`export QEMU_AUDIO_DRV=none`  
+	`cd $ANDROID_HOME/tools`
 	`sudo -b ./emulator -avd AVDNAME -no-skin -no-window -no-boot-anim`  
 
 ### Shutdown the emulator
