@@ -171,7 +171,7 @@ public class Project {
 				ConfigurationProperties.getProperty("androidsdk") + "/extras/android/m2repository/"
 			  , ConfigurationProperties.getProperty("androidsdk") + "/extras/google/m2repository/" });
 
-		BufferedWriter out = new BufferedWriter(new FileWriter(location + "/build.gradle", true));
+		BufferedWriter out = new BufferedWriter(new FileWriter(location + "/app/build.gradle", true));
 
 		out.write("\n\nrepositories {");
 		for(String repository : m2repositories)
@@ -189,7 +189,7 @@ public class Project {
 
    		CommandExecutorProcess.execute("./gradlew saveDependencies -no-daemon", location);
 
-   		extractAAR(location + "/localrepo");
+   		extractAAR(location + "/app/localrepo");
 	}
 
 
