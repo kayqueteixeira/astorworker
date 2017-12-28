@@ -12,13 +12,13 @@ import fr.inria.astor.core.validation.validators.TestCasesProgramValidationResul
 import fr.inria.astor.core.setup.ConfigurationProperties;
 import br.ufg.inf.astorworker.executors.InstrumentationTestExecutorProcess;
 import br.ufg.inf.astorworker.executors.JUnitTestExecutorProcess; 
-import br.ufg.inf.astorworker.entity.Project; 
+import br.ufg.inf.astorworker.entities.AndroidProject; 
 import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 
 public class ProgramValidator  {
 	private static Logger logger = Logger.getLogger(ProgramValidator.class);
 	
-	public static TestCasesProgramValidationResult validate(Project project, File variant) throws Exception {
+	public static TestCasesProgramValidationResult validate(AndroidProject project, File variant) throws Exception {
 		TestResult tr = null;
 
 		// Applying variant
@@ -30,9 +30,9 @@ public class ProgramValidator  {
 		FileUtils.copyDirectory(variant, new File(location+"/app/src/main/java/"));
 
 		//Executing normal test cases
-		if(project.getFailing() != null) {
+		if(project.getFailingUnitTestCases() != null) {
 			JUnitTestExecutorProcess jtep = new JUnitTestExecutorProcess();
-			tr = jtep.execute(project, Arrays.asList(project.getFailing().split(":")));
+			tr = jtep.execute(project, Arrays.asList(project.getFailingUnitTestCases().split(":")));
 
 			if(tr == null){
 				logger.info("There was an error validating the variant");
@@ -42,9 +42,9 @@ public class ProgramValidator  {
 					
 
 		//Executing instrumentation test cases
-	 	if(project.getInstrumentationFailing() != null){
+	 	if(project.getFailingInstrumentationTestCases() != null){
 			InstrumentationTestExecutorProcess itep = new InstrumentationTestExecutorProcess();
-			tr = itep.execute(tr, project, Arrays.asList(project.getInstrumentationFailing().split(":")));
+			tr = itep.execute(tr, project, Arrays.asList(project.getFailingInstrumentationTestCases().split(":")));
 
 			if(tr == null){
 				logger.info("There was an error validating the variant");
@@ -64,7 +64,7 @@ public class ProgramValidator  {
 	}
 
 
-	private static TestCasesProgramValidationResult runRegression(Project project, File variant) throws MalformedURLException {
+	private static TestCasesProgramValidationResult runRegression(AndroidProject project, File variant) throws MalformedURLException {
 		logger.info("Running regression");
 		TestResult trregression = null;
 

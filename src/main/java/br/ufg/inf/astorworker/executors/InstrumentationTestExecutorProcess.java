@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 import fr.inria.astor.core.validation.entity.TestResult;
 import fr.inria.astor.core.setup.ConfigurationProperties;
-import br.ufg.inf.astorworker.entity.Project;
+import br.ufg.inf.astorworker.entities.AndroidProject;
 
 /**
  * Process-based program variant validation
@@ -29,7 +29,7 @@ public class  InstrumentationTestExecutorProcess {
 	boolean avoidInterruption = false;
 	
 
-	public TestResult execute(TestResult tr, Project project, List<String> classesToExecute) {
+	public TestResult execute(TestResult tr, AndroidProject project, List<String> classesToExecute) {
 		if(tr == null){
 			tr = new TestResult();
 			tr.casesExecuted = 0;
@@ -38,7 +38,7 @@ public class  InstrumentationTestExecutorProcess {
 
 		try {
 			//Running tests
-			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getProjectLocation(), project.getInstrumentationTestTask(), classesToExecute);
+			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getLocation(), project.getInstrumentationTestTask(), classesToExecute);
 
 			tr = getTestResult(tr, output);
 			
@@ -50,7 +50,7 @@ public class  InstrumentationTestExecutorProcess {
 	}
 
 
-	public TestResult executeRegression(TestResult tr, Project project) {
+	public TestResult executeRegression(TestResult tr, AndroidProject project) {
 		if(tr == null){
 			tr = new TestResult();
 			tr.casesExecuted = 0;
@@ -59,7 +59,7 @@ public class  InstrumentationTestExecutorProcess {
 
 		try {
 			//Running tests
-			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getProjectLocation(), project.getInstrumentationTestTask());
+			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getLocation(), project.getInstrumentationTestTask());
 
 			tr = getTestResult(tr, output);
 			

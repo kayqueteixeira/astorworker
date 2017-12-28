@@ -34,7 +34,7 @@ import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
 import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 import br.ufg.inf.astorworker.executors.JavaProjectCompiler;
 import br.ufg.inf.astorworker.validators.ProgramValidator;
-import br.ufg.inf.astorworker.entity.Project;
+import br.ufg.inf.astorworker.entities.AndroidProject;
 import br.ufg.inf.astorworker.faultlocalization.entities.Line;
 import br.ufg.inf.astorworker.faultlocalization.AndroidFaultLocalization;
 import br.ufg.inf.astorworker.handlers.DataConnectionHandler;
@@ -65,7 +65,7 @@ public class AstorWorker  {
 	public static void main(String[] args) {
 
 		try{
-			Project project = null;
+			AndroidProject project = null;
 			ObjectOutputStream hostObjectOutput = null;
 			Socket hostByteSocket = null;
 			Socket hostStringSocket = null;
@@ -217,9 +217,9 @@ public class AstorWorker  {
 
 						logger.info("File " + projectFile.getName() + " received!");
 
-						project = new Project(projectFile, ConfigurationProperties.getProperty("projectname"));
+						project = new AndroidProject(projectFile);
 
-						project.setupProject();
+						project.setup();
 						break;
 
 					case "SEND_FAILING_TEST":
@@ -228,12 +228,12 @@ public class AstorWorker  {
 						String[] tokens = action.split("@");
 
 						if(TestType.valueOf(tokens[0]).equals(TestType.INSTRUMENTATION)){
-							project.setFailingInstrumentationTests(tokens[1]);
+							project.setFailingInstrumentationTestCases(tokens[1]);
 							logger.info("Failing instrumentation tests received: " + tokens[1]);
 						}
 
 						if(TestType.valueOf(tokens[0]).equals(TestType.UNIT)){
-							project.setFailingUnitTests(tokens[1]);
+							project.setFailingUnitTestCases(tokens[1]);
 							logger.info("Failing unit tests received: " + tokens[1]);
 						}
 
@@ -247,7 +247,7 @@ public class AstorWorker  {
 						if(!faultLocalizationInitialized){
 							logger.info("Setting up fault localization");
 							AndroidFaultLocalization.setProjectName(project.getProjectName());
-							AndroidFaultLocalization.setProjectLocation(project.getProjectLocation());
+							AndroidFaultLocalization.setProjectLocation(project.getLocation());
 							AndroidFaultLocalization.setInstrumentationTestTask(project.getInstrumentationTestTask());
 							AndroidFaultLocalization.setUnitTestTask(project.getUnitTestTask());
 							project.saveBuildGradle();

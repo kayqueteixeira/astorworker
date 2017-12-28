@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import org.apache.log4j.Logger;
 
 import fr.inria.astor.core.validation.entity.TestResult;
-import br.ufg.inf.astorworker.entity.Project;
+import br.ufg.inf.astorworker.entities.AndroidProject;
 
 /**
  * Process-based program variant validation
@@ -28,9 +28,9 @@ import br.ufg.inf.astorworker.entity.Project;
 public class  JUnitTestExecutorProcess {
 	private Logger logger = Logger.getLogger(JUnitTestExecutorProcess.class);
 	
-	public TestResult execute(Project project, List<String> classesToExecute) {
+	public TestResult execute(AndroidProject project, List<String> classesToExecute) {
 		try {
-			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getProjectLocation(), project.getUnitTestTask(), classesToExecute);
+			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getLocation(), project.getUnitTestTask(), classesToExecute);
 		
 			TestResult tr = getTestResult(output);
 			
@@ -41,9 +41,9 @@ public class  JUnitTestExecutorProcess {
 		return null;
 	}
 
-	public TestResult executeRegression(Project project) {
+	public TestResult executeRegression(AndroidProject project) {
 		try {
-			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getProjectLocation(), project.getUnitTestTask());
+			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getLocation(), project.getUnitTestTask());
 		
 			TestResult tr = getTestResult(output);
 			

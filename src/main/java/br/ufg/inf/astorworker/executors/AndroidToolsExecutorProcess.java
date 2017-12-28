@@ -45,14 +45,14 @@ public class AndroidToolsExecutorProcess {
 		return output;
 	}
 
-	public static void uninstallAPK(String appPackage) throws InterruptedException, IOException, IllegalStateException {
+	public static void uninstallPackage(String appPackage) throws InterruptedException, IOException, IllegalStateException {
 		List<String> output = CommandExecutorProcess.execute("./adb uninstall "+appPackage, ConfigurationProperties.getProperty("platformtools"));
 
 		// Emulator bug workaround
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
 			logger.info("The android emulator had a problem. Restarting adb...");
 			restartADB();
-			uninstallAPK(appPackage);
+			uninstallPackage(appPackage);
 			return;
 		}
 
