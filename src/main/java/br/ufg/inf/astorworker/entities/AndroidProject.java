@@ -52,7 +52,8 @@ public class AndroidProject {
 	public void setup() throws Exception {
 		logger.info("Getting project information");
 
-		FileSystemUtils.getPermissionsForDirectory(projectDirectory);
+		if(!AndroidToolsExecutorProcess.getOperatingSystem().equals("Windows"))
+			FileSystemUtils.getPermissionsForDirectory(projectDirectory);
 		projectAbsolutePath = projectDirectory.getAbsolutePath();
 		projectName = projectDirectory.getName();
 		mainFolder = findMainFolder();
@@ -69,35 +70,35 @@ public class AndroidProject {
 		unitTestTask = findTask(unitTaskPattern);
 		instrumentationTestTask = findTask(instrumentationTaskPattern);
 		activateTestLogging();
-		setupWorkingDirectory();
 
 		findDependencies();	
 		flavor = findFlavor();
 		findRegressionTestCases();
+		setupWorkingDirectory();
 	}
 
 	private void findRegressionTestCases() throws Exception {
 		if(new File(projectAbsolutePath + "/app/src/test").exists()) {
-			List<String> output = CommandExecutorProcess.execute("find app/src/test -name *.java", projectAbsolutePath);
+			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/app/src/test"), "java", false);
 			unitRegressionTestCasesExist = !output.isEmpty();
 		}
 		else unitRegressionTestCasesExist = false;
 
 		if(new File(projectAbsolutePath + "/app/src/androidTest").exists()) {
-			List<String> output = CommandExecutorProcess.execute("find app/src/androidTest -name *.java", projectAbsolutePath);
+			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/app/src/androidTest"), "java", false);
 			instrumentationRegressionTestCasesExist = !output.isEmpty();
 		}
 		else instrumentationRegressionTestCasesExist = false;
 	} 
 
-	private String findFlavor() throws IOException, InterruptedException {
-		List<String> output = CommandExecutorProcess.execute("ls app/build/intermediates/classes/", projectAbsolutePath);
+	private String findFlavor() throws Exception {
+		List<String> output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes"));
 		ArrayList<String> flavors = new ArrayList<String>();
 
 		for(String entry : output){
 			if(!entry.equals("release") && !entry.equals("debug") && !entry.equals("test") && !entry.equals("androidTest")){
 				flavors.add(entry);
-				logger.info("Flavor found: "+entry);
+				logger.info("Flavor found: " + entry);
 			}
 		}
 
@@ -108,16 +109,16 @@ public class AndroidProject {
 	}
 
 	private void extractAAR(String libLocation) throws Exception {
-		List<String> output = CommandExecutorProcess.execute("find " + libLocation + " -type f -name *.aar -printf %f\n");
+		List<String> output = FileSystemUtils.findFilesWithExtension(new File(libLocation), "aar", false);
 
 		for(String aar : output){
 			String aarFolder = aar.split(".aar")[0];
-			CommandExecutorProcess.execute("mkdir " + aarFolder, libLocation);
-			CommandExecutorProcess.execute("cp " + aar + " " + aarFolder, libLocation);
-			CommandExecutorProcess.execute("jar xf " + aar, libLocation + "/" + aarFolder);
-			CommandExecutorProcess.execute("mkdir jars", libLocation + "/" + aarFolder);
-			CommandExecutorProcess.execute("mv classes.jar jars", libLocation + "/" + aarFolder);
-			CommandExecutorProcess.execute("rm " + aar, libLocation + "/" + aarFolder);
+			File aarDirectory = new File(FileSystemUtils.fixPath(libLocation + "/" + aarFolder));
+			FileUtils.moveFileToDirectory(new File(FileSystemUtils.fixPath(libLocation + "/" + aar)), aarDirectory, true);
+			CommandExecutorProcess.execute("jar xf " + aar, FileSystemUtils.fixPath(libLocation + "/" + aarFolder));
+			File jarsDirectory = new File(FileSystemUtils.fixPath(libLocation + "/" + aarFolder + "/" + "jars"));
+			FileUtils.moveFileToDirectory(new File(FileSystemUtils.fixPath(libLocation + "/" + aarFolder + "/classes.jar")), jarsDirectory, true);
+			FileUtils.forceDelete(new File(FileSystemUtils.fixPath( libLocation + "/" + aarFolder + "/" + aar)));
 		}
 	}
 
@@ -125,14 +126,14 @@ public class AndroidProject {
 		String repositoryFormat = "\n\tmaven {\n\t\turl '%s'\n\t}\n";
 
 		List<String> m2repositories = Arrays.asList(new String[] { 
-				ConfigurationProperties.getProperty("androidsdk") + "/extras/android/m2repository/"
-			  , ConfigurationProperties.getProperty("androidsdk") + "/extras/google/m2repository/" });
+				ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/android/m2repository/")
+			  , ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/google/m2repository/") });
 
-		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/app/build.gradle", true));
+		BufferedWriter out = new BufferedWriter(new FileWriter(new File(projectAbsolutePath + "/app/build.gradle"), true));
 
 		out.write("\n\nrepositories {");
 		for(String repository : m2repositories)
-			out.write(String.format(repositoryFormat, repository));
+			out.write(String.format(repositoryFormat, repository.replace("\\", "\\\\")));
 		out.write("\n\tmavenLocal()\n}\n\n");
 		
 
@@ -144,7 +145,7 @@ public class AndroidProject {
         in.close();
    		out.close();
 
-   		CommandExecutorProcess.execute("./gradlew saveDependencies -no-daemon", projectAbsolutePath);
+   		AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "saveDependencies", true);
 
    		extractAAR(projectAbsolutePath + "/app/localrepo");
 	}
@@ -153,21 +154,22 @@ public class AndroidProject {
 		logger.info("Finding dependencies");
 		saveDependenciesLocally();
 
-		dependencies = "";
-		List<String> output = CommandExecutorProcess.execute("find " + projectAbsolutePath + " -type f -name *.jar");
+		String dependencies = "";
+		List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath), "jar", true);
 
 		for(String entry : output)
-			dependencies += entry + ":";
+			dependencies += entry + System.getProperty("path.separator");
 
 		AndroidToolsExecutorProcess.compileProject(projectAbsolutePath);
-		output = CommandExecutorProcess.execute("ls app/build/intermediates/classes/", projectAbsolutePath);
+
+		output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/"));
 
 		for(String entry : output){
 			if(entry.equals("debug"))
-				dependencies += projectAbsolutePath + "/app/build/intermediates/classes/debug/" + ":";
+				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/app/build/intermediates/classes/debug/") + System.getProperty("path.separator");
 
 			else if(!entry.equals("release")){
-				dependencies += projectAbsolutePath + "/app/build/intermediates/classes/" + entry + "/debug/" + ":";
+				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/app/build/intermediates/classes/" + entry + "/debug/") + System.getProperty("path.separator");
 			}
 		}
 
@@ -178,7 +180,7 @@ public class AndroidProject {
 
 	private String findBuildVersion() throws Exception {
 		Pattern buildVersionPattern = Pattern.compile("\\s*(buildtoolsversion)\\s*(\'|\")([ .0-9]+)(\'|\")\\s*");
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + File.separator + mainFolder + File.separator + "build.gradle")));
+		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle")));
 
 		String line = null;
 		String buildToolsVersion = null ;
@@ -198,7 +200,7 @@ public class AndroidProject {
 
 	private String findCompileVersion() throws Exception {
 		Pattern compileVersionPattern = Pattern.compile("\\s*(compilesdkversion)\\s*([0-9]+)\\s*");
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + File.separator + mainFolder + File.separator + "build.gradle")));
+		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle")));
 
 		String line = null;
 		String compileVersion = null ;
@@ -219,7 +221,7 @@ public class AndroidProject {
 	
 
 	private String findTask(Pattern p) throws Exception {
-		List<String> output = AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "tasks");
+		List<String> output = AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "tasks", false);
 
 		for(String line : output) {
 			Matcher m = p.matcher(line.toLowerCase());
@@ -233,7 +235,7 @@ public class AndroidProject {
 	private String findTestPackage() throws Exception {
 		Pattern testPackagePattern = Pattern.compile("\\s*(testApplicationId)\\s*(\'|\")([ .a-zA-Z0-9]+)(\'|\")\\s*");
 
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + File.separator + mainFolder + File.separator + "build.gradle")));
+		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle")));
 		String line = null;
 		String testPackage = null;
 
@@ -258,8 +260,7 @@ public class AndroidProject {
 		Pattern packagePattern = Pattern.compile("\\s*(package)\\s*(=)\\s*(\'|\")([ .a-zA-Z0-9]+)(\'|\")\\s*(.*?)\\s*");
 
 		BufferedReader br = new BufferedReader(new FileReader(
-				new File(projectAbsolutePath + File.separator + mainFolder + File.separator
-					+ "src" + File.separator + "main" + File.separator + "AndroidManifest.xml")));
+				new File(projectAbsolutePath + "/" + mainFolder + "/src/main/AndroidManifest.xml")));
 
 		String line = null;
 		String mainPackage = null ;
@@ -278,7 +279,7 @@ public class AndroidProject {
 	}
 
 	private String findMainFolder() throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader(projectAbsolutePath + File.separator + "settings.gradle"));
+		BufferedReader br = new BufferedReader(new FileReader(projectAbsolutePath + "/settings.gradle"));
 		Pattern p = Pattern.compile("include\\s*\\'\\:([a-zA-Z0-9]+)\\'\\s*\\,?+(.*?)\\s*");
 
 		String line;
@@ -294,29 +295,27 @@ public class AndroidProject {
 	}
 
 	public boolean instrumentationTestsExist() throws Exception {
-		if(!(new File(projectAbsolutePath + File.separator + mainFolder + File.separator + "src" + File.separator + "androidTest").exists()))
+		if(!(new File(projectAbsolutePath + "/" + mainFolder + "/src/androidTest").exists()))
 			return false;
 
 		List<String> instrumentationTests = FileSystemUtils.findFilesWithExtension(
-				new File(projectAbsolutePath + File.separator + mainFolder 
-					+ File.separator + "src" + File.separator + "androidTest"), "java");
+				new File(projectAbsolutePath + "/" + mainFolder + "/src/androidTest"), "java", true);
 
 		return !instrumentationTests.isEmpty();
 	}	
 
 	public boolean unitTestsExist() throws Exception {
-		if(!(new File(projectAbsolutePath + File.separator + mainFolder + File.separator + "src" + File.separator + "test").exists()))
+		if(!(new File(projectAbsolutePath + "/" + mainFolder + "/src/test").exists()))
 			return false;
 
 		List<String> unitTests = FileSystemUtils.findFilesWithExtension(
-				new File(projectAbsolutePath + File.separator + mainFolder 
-					+ File.separator + "src" + File.separator + "test"), "java");
+				new File(projectAbsolutePath + "/" + mainFolder + "/src/test"), "java", true);
 
 		return !unitTests.isEmpty();
 	}
 
 	private void activateTestLogging() throws Exception {
-   		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + File.separator + mainFolder + File.separator + "build.gradle", true));
+   		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
     	BufferedReader in = new BufferedReader(new FileReader("test.gradle"));
     	String line;
 
@@ -333,15 +332,17 @@ public class AndroidProject {
 		ConfigurationProperties.setProperty("defaultbin", defaultBin.getAbsolutePath());
 		defaultBin.mkdirs();
 
+		AndroidToolsExecutorProcess.compileTests(projectAbsolutePath);
+
 		if(flavor == null){
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/release/. workDir/AstorWorker-" + projectName + "/default/bin");
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/test/debug/. workDir/AstorWorker-" + projectName + "/default/bin");
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/androidTest/debug/. workDir/AstorWorker-" + projectName + "/default/bin");
+			FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/release"), defaultBin);
+			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/test/debug"), defaultBin);
+			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/androidTest/debug"), defaultBin);
 		}
 		else{
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/" + flavor + "/release/. workDir/AstorWorker-" + projectName + "/default/bin");
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/test/" + flavor + "/debug/. workDir/AstorWorker-" + projectName + "/default/bin");
-			CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/build/intermediates/classes/androidTest/" + flavor + "/debug/. workDir/AstorWorker-" + projectName + "/default/bin");
+			FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/" + flavor + "/release"), defaultBin);
+			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/test/" + flavor + "/debug"), defaultBin);
+			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/androidTest/" + flavor + "/debug"), defaultBin);
 		}
 
 		//Creating the default source dir
@@ -349,7 +350,7 @@ public class AndroidProject {
 		ConfigurationProperties.setProperty("defaultsrc", defaultSrc.getAbsolutePath());
 		defaultSrc.mkdirs();
 
-		CommandExecutorProcess.execute("cp -a " + projectAbsolutePath + "/app/src/main/java/. workDir/AstorWorker-" + projectName + "/default/src");
+		FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/src/main/java"), defaultSrc);
 	}
 
 	public void setFailingInstrumentationTestCases(String tests){
@@ -361,11 +362,11 @@ public class AndroidProject {
 	}
 
 	public void saveBuildGradle() throws IOException, InterruptedException {
-		CommandExecutorProcess.execute("cp " + projectAbsolutePath + "/app/build.gradle workDir/AstorWorker-" + projectName + "/");
+		FileUtils.copyFileToDirectory(new File(projectAbsolutePath + "/app/build.gradle"), new File("workDir/AstorWorker-" + projectName));
 	}
 
 	public void restoreBuildGradle() throws IOException, InterruptedException {
-		CommandExecutorProcess.execute("cp workDir/AstorWorker-" + projectName + "/build.gradle " + projectAbsolutePath + "/app/");
+		FileUtils.copyFileToDirectory(new File("workDir/AstorWorker-" + projectName + "/build.gradle "), new File(projectAbsolutePath + "/app/"));
 	}
 
 	public String getProjectName(){

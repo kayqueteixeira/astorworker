@@ -22,11 +22,13 @@ import org.apache.commons.collections4.map.HashedMap;
 import org.apache.commons.collections4.map.AbstractHashedMap;
 import org.apache.commons.collections4.MapIterator;
 import org.apache.log4j.Logger;
+import org.apache.commons.io.FileUtils;
 
-import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
+import br.inf.ufg.astorworker.utils.FileSystemUtils;
 import br.ufg.inf.astorworker.faultlocalization.entities.Line;
 import br.ufg.inf.astorworker.TestType;
+import br.inf.ufg.astorworker.utils.FileSystemUtils;
 
 public class AndroidFaultLocalization {
 	private static String projectLocation;
@@ -58,15 +60,14 @@ public class AndroidFaultLocalization {
 			throws IOException, InterruptedException {
 
 		// Creating the reports dir
-		CommandExecutorProcess.execute("mkdir -p workDir/AstorWorker-" + projectName + "/faultLocalization/reports/");
+		new File("workDir/AstorWorker-" + projectName + "/faultLocalization/reports/").mkdirs();
 
 		// Modifying build.gradle to run jacoco
 		setupBuildGradle(projectLocation);
 	}
 
 
-	public static List<Line> searchSuspicious(String test, TestType type, boolean passing) 
-			throws IOException, InterruptedException, ParserConfigurationException, SAXException {
+	public static List<Line> searchSuspicious(String test, TestType type, boolean passing) throws Exception {
 
 		boolean result = generateXML(test, type);
 		if(result)
@@ -75,12 +76,11 @@ public class AndroidFaultLocalization {
 			return new ArrayList<Line>();
 	}
 
-	private static boolean generateXML(String test, TestType type) 
-									throws IOException, InterruptedException  {
+	private static boolean generateXML(String test, TestType type) throws Exception {
 
 		//Removing old .ec and .exec files
-		CommandExecutorProcess.execute("find " + projectLocation + "/app/ -name *.ec -delete");
-		CommandExecutorProcess.execute("find " + projectLocation + "/app/ -name *.exec -delete");
+		FileSystemUtils.findFilesWithExtensionAndDelete(new File(projectLocation + "/app/"), "ec");
+		FileSystemUtils.findFilesWithExtensionAndDelete(new File(projectLocation + "/app/"), "exec");
 
     	List<String> testTasks = new ArrayList<>();
 
@@ -99,10 +99,10 @@ public class AndroidFaultLocalization {
 
 		// Running test task
 		if(type.equals(TestType.INSTRUMENTATION))
-			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "-Pandroid.testInstrumentationRunnerArguments.class=" + test + " " + task);
+			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "-Pandroid.testInstrumentationRunnerArguments.class=" + test + " " + task, false);
 
 		if(type.equals(TestType.UNIT))
-			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, task + " --tests=" + test.replaceAll("#","\\."));
+			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, task + " --tests=" + test.replaceAll("#","\\."), false);
 
 		for(String line : output){
 			if(line.contains("No tests found")){
@@ -112,7 +112,7 @@ public class AndroidFaultLocalization {
 		}
 
 		// Running jacoco coverage
-		List<String> coverageOutput = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "--continue " + task + "Coverage");
+		List<String> coverageOutput = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "--continue " + task + "Coverage", false);
 
 		// Checking if the task was skipped
 		for(String line : coverageOutput){
@@ -131,9 +131,8 @@ public class AndroidFaultLocalization {
 		}
 
 		// Saving xml at the reports folder
-		CommandExecutorProcess.execute("cp " + projectLocation + "/app/build/reports/jacoco/" + task + "Coverage"
-								   + "/" + task + "Coverage" + ".xml workDir/AstorWorker-" + projectName 
-								   + "/faultLocalization/reports/" + test.replaceAll("#", "\\.") + ".xml");
+		FileUtils.copyFile(new File(projectLocation + "/app/build/reports/jacoco/" + task + "Coverage/" + task + "Coverage.xml"),
+						 	new File("workDir/AstorWorker-" + projectName + "/faultLocalization/reports/" + test.replaceAll("#", "\\.") + ".xml"));
 
 		logger.info("Report " + test.replaceAll("#", "\\.") + ".xml was created");
 		return true;	

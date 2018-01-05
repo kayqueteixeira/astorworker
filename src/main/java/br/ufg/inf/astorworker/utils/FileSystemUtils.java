@@ -47,19 +47,49 @@ public class FileSystemUtils {
    	 	getAllPermissions(directory);
 	}
 
-	public static List<String> findFilesWithExtension(File directory, String extension) {
+	public static List<String> findFilesWithExtension(File directory, String extension, boolean fullPath) throws Exception {
+        ArrayList<String> filesFound = new ArrayList<>();
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(directory.listFiles()));
 
-		ArrayList<String> filesFound = new ArrayList<>();
-		ArrayList<File> files = new ArrayList<>(Arrays.asList(directory.listFiles()));
+        for (File child : files){
+            if(child.isDirectory())
+                filesFound.addAll(findFilesWithExtension(child, extension, fullPath));
 
-    	for (File child : files){
-    		if(child.isDirectory())
-    			findFilesWithExtension(child, extension);
+            if(child.getName().contains("." + extension)){
+                if(fullPath)
+                    filesFound.add(child.getAbsolutePath());
+                else
+                    filesFound.add(child.getName());
+            }
+        }
 
-    		if(child.getName().contains("." + extension))
-    			filesFound.add(child.getName());
-   	 	}
+        return filesFound;
+    }
 
-   	 	return filesFound;
-	}
+    public static void findFilesWithExtensionAndDelete(File directory, String extension) throws Exception {
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(directory.listFiles()));
+
+        for (File child : files){
+            if(child.isDirectory())
+                findFilesWithExtensionAndDelete(child, extension);
+
+            if(child.getName().contains("." + extension))
+                FileUtils.forceDelete(child);
+        }
+    }
+
+    public static List<String> listContentsDirectory(File directory) throws Exception {
+        ArrayList<String> filesFound = new ArrayList<>();
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(directory.listFiles()));
+
+        for (File child : files)
+            filesFound.add(child.getName());
+        
+        return filesFound;
+    }
+
+    /* Replace '/' with the correct file separator */
+    public static String fixPath(String path) {
+        return path.replace("/",File.separator);
+    }
 }

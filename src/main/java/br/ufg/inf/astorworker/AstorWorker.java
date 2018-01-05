@@ -31,7 +31,6 @@ import fr.inria.astor.core.validation.entity.TestResult;
 import fr.inria.astor.core.validation.validators.TestCasesProgramValidationResult;
 import fr.inria.astor.core.setup.ConfigurationProperties;
 import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
-import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 import br.ufg.inf.astorworker.executors.JavaProjectCompiler;
 import br.ufg.inf.astorworker.validators.ProgramValidator;
 import br.ufg.inf.astorworker.entities.AndroidProject;
@@ -80,6 +79,8 @@ public class AstorWorker  {
 				logger.error("Problems with command arguments");
 				return;
 			}
+
+			AndroidToolsExecutorProcess.setup(ConfigurationProperties.getProperty("androidsdk"));
 
 			new DataConnectionHandler(Integer.parseInt(ConfigurationProperties.getProperty("workerport"))).start();
 
@@ -197,10 +198,10 @@ public class AstorWorker  {
 						logger.info("Project name: " + projectName);
 						logger.info("Creating folder on workDir for " + projectName);
 
-						//Deleting old dir if it exists
-						CommandExecutorProcess.execute("rm -r -f workDir/AstorWorker-" + projectName);
 
 						File workingDir = new File("workDir/AstorWorker-" + projectName);
+						//Deleting old dir if it exists
+						FileUtils.deleteQuietly(workingDir);
 						workingDir.mkdir();
 						break;
 

@@ -13,7 +13,6 @@ import fr.inria.astor.core.setup.ConfigurationProperties;
 import br.ufg.inf.astorworker.executors.InstrumentationTestExecutorProcess;
 import br.ufg.inf.astorworker.executors.JUnitTestExecutorProcess; 
 import br.ufg.inf.astorworker.entities.AndroidProject; 
-import br.ufg.inf.astorworker.executors.CommandExecutorProcess;
 
 public class ProgramValidator  {
 	private static Logger logger = Logger.getLogger(ProgramValidator.class);

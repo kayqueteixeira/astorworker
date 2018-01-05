@@ -29,16 +29,16 @@ public static File receiveFolder(String projectName, InputStream is) throws IOEx
 
         while((entry = zis.getNextEntry()) != null) {
 
-            String fileName = entry.getName().split("src/")[1];
-            mainFolder = fileName.split("/")[0];
+            String fileName = entry.getName().split(".src.")[1];
+            mainFolder = fileName.split("\\\\|/")[0];
 
             int count;
             byte data[] = new byte[BUFFER];
             
-            File temp = new File("workDir/AstorWorker-"+projectName+"/variants/"+fileName);
+            File temp = new File("workDir/AstorWorker-" + projectName + "/variants/" + fileName);
             temp.getParentFile().mkdirs();
 
-            FileOutputStream fos = new FileOutputStream("workDir/AstorWorker-"+projectName+"/variants/"+fileName);
+            FileOutputStream fos = new FileOutputStream("workDir/AstorWorker-" + projectName + "/variants/" + fileName);
             dest = new BufferedOutputStream(fos, BUFFER);
             while ((count = zis.read(data, 0, BUFFER)) != -1) 
                 dest.write(data, 0, count);
@@ -47,7 +47,7 @@ public static File receiveFolder(String projectName, InputStream is) throws IOEx
             dest.close();
         }
         
-        return new File("workDir/AstorWorker-"+projectName+"/variants/"+mainFolder);
+        return new File("workDir/AstorWorker-" + projectName + "/variants/" + mainFolder);
     }
 
     public static File receiveInitialProject(String projectName, InputStream is) throws IOException {
@@ -57,15 +57,15 @@ public static File receiveFolder(String projectName, InputStream is) throws IOEx
         
 
         while((entry = zis.getNextEntry()) != null) {
-            String fileName = entry.getName().split("Astor4AndroidMain-"+projectName+"/clean")[1];
+            String fileName = entry.getName().split("Astor4AndroidMain-" + projectName + ".clean.")[1];
 
             int count;
             byte data[] = new byte[BUFFER];
             
-            File temp = new File("workDir/AstorWorker-"+projectName+"/"+fileName);
+            File temp = new File("workDir/AstorWorker-" + projectName + "/" + fileName);
             temp.getParentFile().mkdirs();
 
-            FileOutputStream fos = new FileOutputStream("workDir/AstorWorker-"+projectName+"/"+fileName);
+            FileOutputStream fos = new FileOutputStream("workDir/AstorWorker-" + projectName + "/" + fileName);
             dest = new BufferedOutputStream(fos, BUFFER);
             while ((count = zis.read(data, 0, BUFFER)) != -1) 
                 dest.write(data, 0, count);
@@ -74,7 +74,7 @@ public static File receiveFolder(String projectName, InputStream is) throws IOEx
             dest.close();
         }
 
-        return new File("workDir/AstorWorker-"+projectName+"/"+projectName);
+        return new File("workDir/AstorWorker-" + projectName + "/" + projectName);
     }
 
 	private static List<String> generateFileList(String source, File node) {
