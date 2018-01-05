@@ -366,7 +366,7 @@ public class AndroidProject {
 	}
 
 	public void restoreBuildGradle() throws IOException, InterruptedException {
-		FileUtils.copyFileToDirectory(new File("workDir/AstorWorker-" + projectName + "/build.gradle "), new File(projectAbsolutePath + "/app/"));
+		FileUtils.copyFileToDirectory(new File("workDir/AstorWorker-" + projectName + "/build.gradle"), new File(projectAbsolutePath + "/app/"));
 	}
 
 	public String getProjectName(){
