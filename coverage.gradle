@@ -54,7 +54,8 @@ productFlavors.each { productFlavorName ->
                                '**/*$ViewInjector*.*',
                                '**/*$ViewBinder*.*',
                                '**/BuildConfig.*',
-                               '**/Manifest*.*']
+                               '**/Manifest*.*',
+                               '**/*$Lambda$*.class']
             )
 
             def coverageSourceDirs = [
@@ -95,6 +96,7 @@ productFlavors.each { productFlavorName ->
                 excludes: ['**/R*.class',
                            '**/*$InjectAdapter.class',
                            '**/*$ModuleAdapter.class',
+                           '**/*$Lambda$*.class',
                            '**/BuildConfig.*',
                            '**/R.class',
                            '**/R$*.class',
