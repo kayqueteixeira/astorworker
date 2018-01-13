@@ -57,20 +57,6 @@ public class AndroidToolsExecutorProcess {
 		logger.info("Successfully compiled the project");
 	}	
 
-	public static void compileTests(String projectLocation) throws InterruptedException, IOException, IllegalStateException  {
-		logger.info("Compiling tests");
-		List<String> output = CommandExecutorProcess.execute(GRADLE + " assembleAndroidTest", projectLocation);
-
-		// Checking if the execution was successful
-		boolean success = searchForString(output, "BUILD SUCCESSFUL");
-
-		if(!success){
-			logger.error("Failed to compile tests at " + projectLocation + ", output:\n\t" + String.join("\n", output));
-			throw new IllegalStateException("Could not compile tests");
-		}
-		
-		logger.info("Successfully compiled the tests");
-	}	
 	
 	public static List<String> runGradleTask(String projectLocation, String gradleTask, boolean compileDependencies) throws InterruptedException, IOException, IllegalStateException  {
 		logger.info("Running gradle task \"" + gradleTask + "\"");

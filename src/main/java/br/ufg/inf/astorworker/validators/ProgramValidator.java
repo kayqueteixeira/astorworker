@@ -17,21 +17,16 @@ import br.ufg.inf.astorworker.entities.AndroidProject;
 public class ProgramValidator  {
 	private static Logger logger = Logger.getLogger(ProgramValidator.class);
 	
-	public static TestCasesProgramValidationResult validate(AndroidProject project, File variant) throws Exception {
+	public static TestCasesProgramValidationResult validate(File variant) throws Exception {
 		TestResult tr = null;
 
 		// Applying variant
-		String location = project.getLocation();
-
-		FileUtils.copyDirectory(new File(ConfigurationProperties.getProperty("defaultsrc")), 
-									new File(location+"/app/src/main/java/"));
-
-		FileUtils.copyDirectory(variant, new File(location+"/app/src/main/java/"));
+		AndroidProject.getInstance().applyVariant(variant);
 
 		//Executing normal test cases
-		if(project.getFailingUnitTestCases() != null) {
+		if(AndroidProject.getInstance().getFailingUnitTestCases() != null) {
 			JUnitTestExecutorProcess jtep = new JUnitTestExecutorProcess();
-			tr = jtep.execute(project, Arrays.asList(project.getFailingUnitTestCases().split(":")));
+			tr = jtep.executeFailingTests();
 
 			if(tr == null){
 				logger.info("There was an error validating the variant");
@@ -41,9 +36,9 @@ public class ProgramValidator  {
 					
 
 		//Executing instrumentation test cases
-	 	if(project.getFailingInstrumentationTestCases() != null){
+	 	if(AndroidProject.getInstance().getFailingInstrumentationTestCases() != null){
 			InstrumentationTestExecutorProcess itep = new InstrumentationTestExecutorProcess();
-			tr = itep.execute(tr, project, Arrays.asList(project.getFailingInstrumentationTestCases().split(":")));
+			tr = itep.executeFailingTests(tr);
 
 			if(tr == null){
 				logger.info("There was an error validating the variant");
@@ -51,26 +46,26 @@ public class ProgramValidator  {
 			}
 		}
 
-		logger.info("Number of test cases executed: "+tr.casesExecuted+"\tNumber of failing test cases: "+tr.failures);
+		logger.info("Number of test cases executed: " + tr.casesExecuted + "\tNumber of failing test cases: " + tr.failures);
 
 		if(tr.wasSuccessful()){
 			logger.info("No failing test cases");
 			//Execute regression
-			return runRegression(project, variant);
+			return runRegression(variant);
 		}
 
 		return new TestCasesProgramValidationResult(tr, tr.wasSuccessful(), false);
 	}
 
 
-	private static TestCasesProgramValidationResult runRegression(AndroidProject project, File variant) throws MalformedURLException {
+	private static TestCasesProgramValidationResult runRegression(File variant) throws Exception {
 		logger.info("Running regression");
 		TestResult trregression = null;
 
 		//Executing normal test cases
-		if(project.unitRegressionTestCasesExist()) {
+		if(AndroidProject.getInstance().unitRegressionTestCasesExist()) {
 			JUnitTestExecutorProcess jtep = new JUnitTestExecutorProcess();
-			trregression = jtep.executeRegression(project);
+			trregression = jtep.executeRegression();
 
 			if(trregression == null){
 				logger.info("There was an error validating the variant");
@@ -79,9 +74,9 @@ public class ProgramValidator  {
 		}
 
 		//Executing instrumentation test cases
-	 	if(project.instrumentationRegressionTestCasesExist()) {
+	 	if(AndroidProject.getInstance().instrumentationRegressionTestCasesExist()) {
 			InstrumentationTestExecutorProcess itep = new InstrumentationTestExecutorProcess();
-			trregression = itep.executeRegression(trregression, project);
+			trregression = itep.executeRegression(trregression);
 
 			if(trregression == null){
 				logger.info("There was an error validating the variant");

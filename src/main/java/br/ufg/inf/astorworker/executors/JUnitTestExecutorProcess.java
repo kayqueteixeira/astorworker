@@ -28,9 +28,9 @@ import br.ufg.inf.astorworker.entities.AndroidProject;
 public class  JUnitTestExecutorProcess {
 	private Logger logger = Logger.getLogger(JUnitTestExecutorProcess.class);
 	
-	public TestResult execute(AndroidProject project, List<String> classesToExecute) {
+	public TestResult executeFailingTests() throws Exception {
 		try {
-			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getLocation(), project.getUnitTestTask(), classesToExecute);
+			List<String> output = AndroidProject.getInstance().runFailingUnitTests();
 		
 			TestResult tr = getTestResult(output);
 			
@@ -41,9 +41,9 @@ public class  JUnitTestExecutorProcess {
 		return null;
 	}
 
-	public TestResult executeRegression(AndroidProject project) {
+	public TestResult executeRegression() throws Exception {
 		try {
-			List<String> output = AndroidToolsExecutorProcess.runUnitTests(project.getLocation(), project.getUnitTestTask());
+			List<String> output = AndroidProject.getInstance().runAllUnitTests();
 		
 			TestResult tr = getTestResult(output);
 			

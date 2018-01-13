@@ -24,6 +24,7 @@ import org.apache.commons.collections4.MapIterator;
 import org.apache.log4j.Logger;
 import org.apache.commons.io.FileUtils;
 
+import br.ufg.inf.astorworker.entities.AndroidProject;
 import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
 import br.inf.ufg.astorworker.utils.FileSystemUtils;
 import br.ufg.inf.astorworker.faultlocalization.entities.Line;
@@ -31,26 +32,11 @@ import br.ufg.inf.astorworker.TestType;
 import br.inf.ufg.astorworker.utils.FileSystemUtils;
 
 public class AndroidFaultLocalization {
-	private static String projectLocation;
 	private static String projectName;
 	private static String unitTestTask;
 	private static String instrumentationTestTask;
-	private static Logger logger = Logger.getRootLogger();
-
-
 	private static AbstractHashedMap<String, Line> faulty = new HashedMap();
-
-	public static String setUnitTestTask(String task){
-		return unitTestTask = task;
-	}
-
-	public static String setInstrumentationTestTask(String task){
-		return instrumentationTestTask = task;
-	}
-
-	public static void setProjectLocation(String location){
-		projectLocation = location;
-	}
+	private static Logger logger = Logger.getRootLogger();
 
 	public static void setProjectName(String name){
 		projectName = name;
@@ -60,10 +46,10 @@ public class AndroidFaultLocalization {
 			throws IOException, InterruptedException {
 
 		// Creating the reports dir
-		new File("workDir/AstorWorker-" + projectName + "/faultLocalization/reports/").mkdirs();
+		new File("workDir/AstorWorker-" + AndroidProject.getInstance().getProjectName() + "/faultLocalization/reports/").mkdirs();
 
 		// Modifying build.gradle to run jacoco
-		setupBuildGradle(projectLocation);
+		AndroidProject.getInstance().activateCodeCoverage();
 	}
 
 
@@ -79,19 +65,19 @@ public class AndroidFaultLocalization {
 	private static boolean generateXML(String test, TestType type) throws Exception {
 
 		//Removing old .ec and .exec files
-		FileSystemUtils.findFilesWithExtensionAndDelete(new File(projectLocation + "/app/"), "ec");
-		FileSystemUtils.findFilesWithExtensionAndDelete(new File(projectLocation + "/app/"), "exec");
+		FileSystemUtils.findFilesWithExtensionAndDelete(new File(AndroidProject.getInstance().getLocation() + "/" + AndroidProject.getInstance().getMainFolder() + "/"), "ec");
+		FileSystemUtils.findFilesWithExtensionAndDelete(new File(AndroidProject.getInstance().getLocation() + "/" + AndroidProject.getInstance().getMainFolder() + "/"), "exec");
 
     	List<String> testTasks = new ArrayList<>();
 
     	String task = null;
 
     	if(type.equals(TestType.INSTRUMENTATION))
-    		task = instrumentationTestTask;
+    		task = AndroidProject.getInstance().getInstrumentationTestTask();
     	
 
     	if(type.equals(TestType.UNIT))
-    		task = unitTestTask;
+    		task = AndroidProject.getInstance().getUnitTestTask();
 
     	logger.info("Task selected: " + task);
 
@@ -99,10 +85,10 @@ public class AndroidFaultLocalization {
 
 		// Running test task
 		if(type.equals(TestType.INSTRUMENTATION))
-			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "-Pandroid.testInstrumentationRunnerArguments.class=" + test + " " + task, false);
+			output = AndroidProject.getInstance().runTask("-Pandroid.testInstrumentationRunnerArguments.class=" + test + " " + task, false);
 
 		if(type.equals(TestType.UNIT))
-			output = AndroidToolsExecutorProcess.runGradleTask(projectLocation, task + " --tests=" + test.replaceAll("#","\\."), false);
+			output = AndroidProject.getInstance().runTask(task + " --tests=" + test.replaceAll("#","\\."), false);
 
 		for(String line : output){
 			if(line.contains("No tests found")){
@@ -112,7 +98,7 @@ public class AndroidFaultLocalization {
 		}
 
 		// Running jacoco coverage
-		List<String> coverageOutput = AndroidToolsExecutorProcess.runGradleTask(projectLocation, "--continue " + task + "Coverage", false);
+		List<String> coverageOutput = AndroidProject.getInstance().runTask("--continue " + task + "Coverage", false);
 
 		// Checking if the task was skipped
 		for(String line : coverageOutput){
@@ -131,7 +117,7 @@ public class AndroidFaultLocalization {
 		}
 
 		// Saving xml at the reports folder
-		FileUtils.copyFile(new File(projectLocation + "/app/build/reports/jacoco/" + task + "Coverage/" + task + "Coverage.xml"),
+		FileUtils.copyFile(new File(AndroidProject.getInstance().getLocation() + "/" + AndroidProject.getInstance().getMainFolder() + "/build/reports/jacoco/" + task + "Coverage/" + task + "Coverage.xml"),
 						 	new File("workDir/AstorWorker-" + projectName + "/faultLocalization/reports/" + test.replaceAll("#", "\\.") + ".xml"));
 
 		logger.info("Report " + test.replaceAll("#", "\\.") + ".xml was created");
@@ -195,15 +181,4 @@ public class AndroidFaultLocalization {
     	return candidates;
 	}
 
-	private static void setupBuildGradle(String projectLocation) throws IOException {
-   		BufferedWriter out = new BufferedWriter(new FileWriter(projectLocation + "/app/build.gradle", true));
-    	BufferedReader in = new BufferedReader(new FileReader("coverage.gradle"));
-    	String line;
-
-       	while ((line = in.readLine()) != null) 
-            out.write("\n" + line);
-        
-    	in.close();
-   		out.close();
-	}
 }

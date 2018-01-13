@@ -29,7 +29,7 @@ public class  InstrumentationTestExecutorProcess {
 	boolean avoidInterruption = false;
 	
 
-	public TestResult execute(TestResult tr, AndroidProject project, List<String> classesToExecute) {
+	public TestResult executeFailingTests(TestResult tr) throws Exception {
 		if(tr == null){
 			tr = new TestResult();
 			tr.casesExecuted = 0;
@@ -38,7 +38,7 @@ public class  InstrumentationTestExecutorProcess {
 
 		try {
 			//Running tests
-			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getLocation(), project.getInstrumentationTestTask(), classesToExecute);
+			List<String> output = AndroidProject.getInstance().runFailingInstrumentationTests();
 
 			tr = getTestResult(tr, output);
 			
@@ -50,7 +50,7 @@ public class  InstrumentationTestExecutorProcess {
 	}
 
 
-	public TestResult executeRegression(TestResult tr, AndroidProject project) {
+	public TestResult executeRegression(TestResult tr) throws Exception {
 		if(tr == null){
 			tr = new TestResult();
 			tr.casesExecuted = 0;
@@ -59,7 +59,7 @@ public class  InstrumentationTestExecutorProcess {
 
 		try {
 			//Running tests
-			List<String> output = AndroidToolsExecutorProcess.runInstrumentationTests(project.getLocation(), project.getInstrumentationTestTask());
+			List<String> output = AndroidProject.getInstance().runAllInstrumentationTests();
 
 			tr = getTestResult(tr, output);
 			

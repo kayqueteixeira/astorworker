@@ -153,16 +153,13 @@ public class AstorWorker  {
 
 						logger.info("File "+variant.getName()+" received!");
 
-						//Copying R.java to variant folder
-						//project.copyRJava(variant);
-
 						logger.info("Processing " + variant.getName() + " ...");
 
-						if(JavaProjectCompiler.compile(variant, ".:"+ConfigurationProperties.getProperty("defaultbin")+":"+project.getDependencies()) == true){
+						if(JavaProjectCompiler.compile(variant) == true){
 							logger.info(variant.getName() + " compiles!");
 							
 							logger.info("Validating " + variant.getName() + "...");
-							validationResult = ProgramValidator.validate(project, variant);
+							validationResult = ProgramValidator.validate(variant);
 							validationResult.setCompilationSuccess(true);
 
 							if(validationResult.isSuccessful())
@@ -218,9 +215,7 @@ public class AstorWorker  {
 
 						logger.info("File " + projectFile.getName() + " received!");
 
-						project = new AndroidProject(projectFile);
-
-						project.setup();
+						AndroidProject.getInstance().setup(projectFile);
 						break;
 
 					case "SEND_FAILING_TEST":
@@ -229,12 +224,12 @@ public class AstorWorker  {
 						String[] tokens = action.split("@");
 
 						if(TestType.valueOf(tokens[0]).equals(TestType.INSTRUMENTATION)){
-							project.setFailingInstrumentationTestCases(tokens[1]);
+							AndroidProject.getInstance().setFailingInstrumentationTestCases(tokens[1]);
 							logger.info("Failing instrumentation tests received: " + tokens[1]);
 						}
 
 						if(TestType.valueOf(tokens[0]).equals(TestType.UNIT)){
-							project.setFailingUnitTestCases(tokens[1]);
+							AndroidProject.getInstance().setFailingUnitTestCases(tokens[1]);
 							logger.info("Failing unit tests received: " + tokens[1]);
 						}
 
@@ -247,11 +242,7 @@ public class AstorWorker  {
 
 						if(!faultLocalizationInitialized){
 							logger.info("Setting up fault localization");
-							AndroidFaultLocalization.setProjectName(project.getProjectName());
-							AndroidFaultLocalization.setProjectLocation(project.getLocation());
-							AndroidFaultLocalization.setInstrumentationTestTask(project.getInstrumentationTestTask());
-							AndroidFaultLocalization.setUnitTestTask(project.getUnitTestTask());
-							project.saveBuildGradle();
+							AndroidProject.getInstance().saveBuildGradle();
 							AndroidFaultLocalization.setupFaultLocalization();
 							logger.info("Fault localization initialized");
 							faultLocalizationInitialized = true;
@@ -278,7 +269,7 @@ public class AstorWorker  {
 
 					case "END_FAULT_LOCALIZATION":
 						logger.info("Fault localization ended");
-						project.restoreBuildGradle();
+						AndroidProject.getInstance().restoreBuildGradle();
 						break;
 				}
 

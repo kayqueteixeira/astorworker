@@ -24,6 +24,7 @@ import fr.inria.astor.core.setup.ConfigurationProperties;
 import br.inf.ufg.astorworker.utils.FileSystemUtils;
 
 public class AndroidProject {
+	private static AndroidProject instance = null;
 	private String mainFolder;
 	private String mainPackage;
 	private String testPackage;
@@ -36,8 +37,8 @@ public class AndroidProject {
 	private String instrumentationTestTask;
 	private String buildVersion;
 	private String compileVersion;
-	private String failingInstrumentationTestCases;
-	private String failingUnitTestCases;
+	private List<String> failingInstrumentationTestCases;
+	private List<String> failingUnitTestCases;
 	private boolean unitRegressionTestCasesExist;
 	private boolean instrumentationRegressionTestCasesExist;
 	private Logger logger = Logger.getLogger(AndroidProject.class);
@@ -45,11 +46,17 @@ public class AndroidProject {
 	private Pattern unitTaskPattern = Pattern.compile("\\s*(test)([a-zA-Z0-9]+)(unittest)\\s-\\s(.*?)\\s*");
 	private Pattern instrumentationTaskPattern = Pattern.compile("\\s*(connected)(androidtest[a-zA-Z0-9]+|[a-zA-Z0-9]+androidtest)\\s-\\s(.*?)\\s*");
 
-	public AndroidProject(File projectDirectory) {
-		this.projectDirectory = projectDirectory;
+	private AndroidProject() {}
+
+	public static AndroidProject getInstance() {
+		if(instance == null)
+			instance = new AndroidProject();
+		
+		return instance;
 	}
 	
-	public void setup() throws Exception {
+	public void setup(File projectDirectory) throws Exception {
+		this.projectDirectory = projectDirectory;
 		logger.info("Getting project information");
 
 		if(!AndroidToolsExecutorProcess.getOperatingSystem().equals("Windows"))
@@ -78,21 +85,21 @@ public class AndroidProject {
 	}
 
 	private void findRegressionTestCases() throws Exception {
-		if(new File(projectAbsolutePath + "/app/src/test").exists()) {
-			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/app/src/test"), "java", false);
+		if(new File(projectAbsolutePath + "/" + mainFolder + "/src/test").exists()) {
+			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/" + mainFolder + "/src/test"), "java", false);
 			unitRegressionTestCasesExist = !output.isEmpty();
 		}
 		else unitRegressionTestCasesExist = false;
 
-		if(new File(projectAbsolutePath + "/app/src/androidTest").exists()) {
-			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/app/src/androidTest"), "java", false);
+		if(new File(projectAbsolutePath + "/" + mainFolder + "/src/androidTest").exists()) {
+			List<String> output = FileSystemUtils.findFilesWithExtension(new File(projectAbsolutePath + "/" + mainFolder + "/src/androidTest"), "java", false);
 			instrumentationRegressionTestCasesExist = !output.isEmpty();
 		}
 		else instrumentationRegressionTestCasesExist = false;
 	} 
 
 	private String findFlavor() throws Exception {
-		List<String> output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes"));
+		List<String> output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes"));
 		ArrayList<String> flavors = new ArrayList<String>();
 
 		for(String entry : output){
@@ -129,7 +136,7 @@ public class AndroidProject {
 				ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/android/m2repository/")
 			  , ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/google/m2repository/") });
 
-		BufferedWriter out = new BufferedWriter(new FileWriter(new File(projectAbsolutePath + "/app/build.gradle"), true));
+		BufferedWriter out = new BufferedWriter(new FileWriter(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle"), true));
 
 		out.write("\n\nrepositories {");
 		for(String repository : m2repositories)
@@ -147,7 +154,7 @@ public class AndroidProject {
 
    		AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "saveDependencies", true);
 
-   		extractAAR(projectAbsolutePath + "/app/localrepo");
+   		extractAAR(projectAbsolutePath + "/" + mainFolder + "/localrepo");
 	}
 
 	private void findDependencies() throws Exception {
@@ -162,14 +169,14 @@ public class AndroidProject {
 
 		AndroidToolsExecutorProcess.compileProject(projectAbsolutePath);
 
-		output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/"));
+		output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/"));
 
 		for(String entry : output){
 			if(entry.equals("debug"))
-				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/app/build/intermediates/classes/debug/") + System.getProperty("path.separator");
+				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/debug/") + System.getProperty("path.separator");
 
 			else if(!entry.equals("release")){
-				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/app/build/intermediates/classes/" + entry + "/debug/") + System.getProperty("path.separator");
+				dependencies += FileSystemUtils.fixPath(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/" + entry + "/debug/") + System.getProperty("path.separator");
 			}
 		}
 
@@ -332,41 +339,77 @@ public class AndroidProject {
 		ConfigurationProperties.setProperty("defaultbin", defaultBin.getAbsolutePath());
 		defaultBin.mkdirs();
 
-		AndroidToolsExecutorProcess.compileTests(projectAbsolutePath);
-
-		if(flavor == null){
-			FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/release"), defaultBin);
-			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/test/debug"), defaultBin);
-			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/androidTest/debug"), defaultBin);
-		}
-		else{
-			FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/" + flavor + "/release"), defaultBin);
-			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/test/" + flavor + "/debug"), defaultBin);
-			//FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/build/intermediates/classes/androidTest/" + flavor + "/debug"), defaultBin);
-		}
-
+		if(flavor == null)
+			FileUtils.copyDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/release"), defaultBin);
+		
+		else
+			FileUtils.copyDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/" + flavor + "/release"), defaultBin);
+		
 		//Creating the default source dir
 		File defaultSrc = new File("workDir/AstorWorker-" + projectName + "/default/src");
 		ConfigurationProperties.setProperty("defaultsrc", defaultSrc.getAbsolutePath());
 		defaultSrc.mkdirs();
 
-		FileUtils.copyDirectory(new File(projectAbsolutePath + "/app/src/main/java"), defaultSrc);
+		FileUtils.copyDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/src/main/java"), defaultSrc);
 	}
 
-	public void setFailingInstrumentationTestCases(String tests){
-		failingInstrumentationTestCases = tests;
+	private void restoreOriginalSource() throws Exception {
+		FileUtils.copyDirectory(new File(ConfigurationProperties.getProperty("defaultsrc")), 
+								new File((projectAbsolutePath + "/" + mainFolder + "/src/main/java/")));
 	}
 
-	public void setFailingUnitTestCases(String tests){
-		failingUnitTestCases = tests;
+	public void applyVariant(File variant) throws Exception {
+		restoreOriginalSource();
+		FileUtils.copyDirectory(variant, new File(projectAbsolutePath + "/" + mainFolder + "/src/main/java/"));
+	}
+
+	public void activateCodeCoverage() throws IOException {
+   		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
+    	BufferedReader in = new BufferedReader(new FileReader("coverage.gradle"));
+    	String line;
+
+       	while ((line = in.readLine()) != null) 
+            out.write("\n" + line);
+        
+    	in.close();
+   		out.close();
+	}
+
+
+	public List<String> runTask(String task, boolean compileDependencies) throws Exception {
+		return AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, task, compileDependencies);
+	}
+
+	public List<String> runFailingInstrumentationTests() throws Exception {
+		return AndroidToolsExecutorProcess.runInstrumentationTests(projectAbsolutePath, instrumentationTestTask, failingInstrumentationTestCases);
+	}
+
+	public List<String> runAllInstrumentationTests() throws Exception {
+		return AndroidToolsExecutorProcess.runInstrumentationTests(projectAbsolutePath, instrumentationTestTask);
+	}	
+
+	public List<String> runFailingUnitTests() throws Exception {
+		return AndroidToolsExecutorProcess.runUnitTests(projectAbsolutePath, unitTestTask, failingUnitTestCases);
+	}
+
+	public List<String> runAllUnitTests() throws Exception {
+		return AndroidToolsExecutorProcess.runUnitTests(projectAbsolutePath, unitTestTask);
+	}
+
+	public void setFailingInstrumentationTestCases(String tests) {
+		failingInstrumentationTestCases = Arrays.asList(tests.split(":"));
+	}
+
+	public void setFailingUnitTestCases(String tests) {
+		failingUnitTestCases = Arrays.asList(tests.split(":"));
 	}
 
 	public void saveBuildGradle() throws IOException, InterruptedException {
-		FileUtils.copyFileToDirectory(new File(projectAbsolutePath + "/app/build.gradle"), new File("workDir/AstorWorker-" + projectName));
+		FileUtils.copyFileToDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle"), new File("workDir/AstorWorker-" + projectName));
 	}
 
 	public void restoreBuildGradle() throws IOException, InterruptedException {
-		FileUtils.copyFileToDirectory(new File("workDir/AstorWorker-" + projectName + "/build.gradle"), new File(projectAbsolutePath + "/app/"));
+		FileUtils.copyFileToDirectory(new File("workDir/AstorWorker-" + projectName + "/build.gradle"), new File(projectAbsolutePath + "/" + mainFolder + "/"));
 	}
 
 	public String getProjectName(){
@@ -377,11 +420,11 @@ public class AndroidProject {
 		return dependencies;
 	}
 
-	public String getFailingUnitTestCases(){
+	public List<String> getFailingUnitTestCases(){
 		return failingUnitTestCases;
 	}
 
-	public String getFailingInstrumentationTestCases(){
+	public List<String> getFailingInstrumentationTestCases(){
 		return failingInstrumentationTestCases;
 	}
 

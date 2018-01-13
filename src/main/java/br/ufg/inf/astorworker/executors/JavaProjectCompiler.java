@@ -18,6 +18,9 @@ import javax.tools.ToolProvider;
 
 import org.apache.log4j.Logger;
 
+import br.ufg.inf.astorworker.entities.AndroidProject;
+import fr.inria.astor.core.setup.ConfigurationProperties;
+
 public class JavaProjectCompiler {
     private static List<String> fileList;
     private static Logger logger = Logger.getLogger(JavaProjectCompiler.class);
@@ -26,7 +29,7 @@ public class JavaProjectCompiler {
         fileList  = new ArrayList<String>();
     }
 
-    public static boolean compile(File project, String dependencies) 
+    public static boolean compile(File variant) 
     		throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
     			
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
@@ -35,9 +38,9 @@ public class JavaProjectCompiler {
 
         List<String> optionList = new ArrayList<String>();
         optionList.add("-classpath");
-        optionList.add(dependencies);
+        optionList.add(".:" + ConfigurationProperties.getProperty("defaultbin") + ":" + AndroidProject.getInstance().getDependencies());
 
-        Iterable<? extends JavaFileObject> compilationUnit = fileManager.getJavaFileObjectsFromStrings(generateFileList(project));
+        Iterable<? extends JavaFileObject> compilationUnit = fileManager.getJavaFileObjectsFromStrings(generateFileList(variant));
         JavaCompiler.CompilationTask task = compiler.getTask(
             null, 
             fileManager, 
@@ -66,9 +69,9 @@ public class JavaProjectCompiler {
               
     
 
-    private static List<String> generateFileList(File project){
+    private static List<String> generateFileList(File variant){
         fileList.clear();
-        return generateFileList(project.getName(), project);
+        return generateFileList(variant.getName(), variant);
     }
     
 
