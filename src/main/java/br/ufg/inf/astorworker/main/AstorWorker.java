@@ -1,4 +1,4 @@
-package br.ufg.inf.astorworker;
+package br.ufg.inf.astorworker.main;
 
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -37,7 +37,8 @@ import br.ufg.inf.astorworker.entities.AndroidProject;
 import br.ufg.inf.astorworker.faultlocalization.entities.Line;
 import br.ufg.inf.astorworker.faultlocalization.AndroidFaultLocalization;
 import br.ufg.inf.astorworker.handlers.DataConnectionHandler;
-
+import br.ufg.inf.astorworker.utils.ZipUtils;
+import br.ufg.inf.astorworker.enums.TestType;
 
 
 /**

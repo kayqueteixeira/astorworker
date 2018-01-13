@@ -28,7 +28,7 @@ import br.ufg.inf.astorworker.entities.AndroidProject;
 import br.ufg.inf.astorworker.executors.AndroidToolsExecutorProcess;
 import br.inf.ufg.astorworker.utils.FileSystemUtils;
 import br.ufg.inf.astorworker.faultlocalization.entities.Line;
-import br.ufg.inf.astorworker.TestType;
+import br.ufg.inf.astorworker.enums.TestType;
 import br.inf.ufg.astorworker.utils.FileSystemUtils;
 
 public class AndroidFaultLocalization {

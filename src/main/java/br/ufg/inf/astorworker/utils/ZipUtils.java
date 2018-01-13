@@ -1,4 +1,4 @@
-package br.ufg.inf.astorworker;
+package br.ufg.inf.astorworker.utils;
 import java.util.zip.*;
 import java.io.*;
 import java.util.List;
