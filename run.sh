@@ -1,1 +1,1 @@
-mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="-platformtools $ANDROID_HOME/platform-tools -buildtools $ANDROID_HOME/build-tools/25.0.0 -androidjar $ANDROID_HOME/platforms/android-25/android.jar -androidsdk $ANDROID_HOME -hostip 127.0.0.1 -hostport 6665 -workerip 127.0.0.1 -workerport 6666"
+mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="-androidsdk $ANDROID_HOME -hostip 127.0.0.1 -hostport 6665 -workerip 127.0.0.1 -workerport 6666"

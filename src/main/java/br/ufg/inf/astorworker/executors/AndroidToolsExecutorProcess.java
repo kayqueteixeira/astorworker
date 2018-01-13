@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import org.apache.log4j.Logger;
 
 import fr.inria.astor.core.setup.ConfigurationProperties;
+import br.inf.ufg.astorworker.utils.FileSystemUtils;
 
 
 /**
@@ -24,9 +25,11 @@ public class AndroidToolsExecutorProcess {
 	private static String GRADLE;
 	private static String ADB;
 	private static String ANDROID_HOME;
+	private static String PLATFORM_TOOLS;
 
 	public static void setup(String androidHome) throws Exception {
 		ANDROID_HOME = androidHome;
+		PLATFORM_TOOLS = FileSystemUtils.fixPath(androidHome + "/platform-tools");
 
 		switch(getOperatingSystem()){
 			case "Windows":
@@ -72,7 +75,7 @@ public class AndroidToolsExecutorProcess {
 	}
 
 	public static void uninstallPackage(String appPackage) throws InterruptedException, IOException, IllegalStateException {
-		List<String> output = CommandExecutorProcess.execute(ADB + " uninstall "+appPackage, ConfigurationProperties.getProperty("platformtools"));
+		List<String> output = CommandExecutorProcess.execute(ADB + " uninstall " + appPackage, PLATFORM_TOOLS);
 
 		// Emulator bug workaround
 		if(searchForString(output, "Can't find service: package") || searchForString(output, "error: device offline")){
@@ -172,8 +175,8 @@ public class AndroidToolsExecutorProcess {
 	}
 
 	private static void restartADB() throws IOException, InterruptedException {
-		CommandExecutorProcess.execute(ADB + " kill-server", ConfigurationProperties.getProperty("platformtools"));
-		CommandExecutorProcess.execute(ADB + " start-server", ConfigurationProperties.getProperty("platformtools"));
+		CommandExecutorProcess.execute(ADB + " kill-server", PLATFORM_TOOLS);
+		CommandExecutorProcess.execute(ADB + " start-server", PLATFORM_TOOLS);
 		logger.info("Adb restarted!");
 	}
 
@@ -189,5 +192,9 @@ public class AndroidToolsExecutorProcess {
 		if(operatingSystem.contains("mac")) return "MacOS";
 
 		return null;
+	}
+
+	public static String getAndroidHome() {
+		return ANDROID_HOME;
 	}
 }

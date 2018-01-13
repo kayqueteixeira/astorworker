@@ -192,7 +192,7 @@ public class AndroidProject {
 			}
 		}
 
-		dependencies += ConfigurationProperties.getProperty("androidjar");
+		dependencies += FileSystemUtils.fixPath(AndroidToolsExecutorProcess.getAndroidHome() + "/platforms/android-" + compileVersion + "/android.jar");
 	}
 
 
