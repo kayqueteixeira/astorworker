@@ -62,10 +62,18 @@ public class AndroidProject {
 		if(!AndroidToolsExecutorProcess.getOperatingSystem().equals("Windows"))
 			FileSystemUtils.getPermissionsForDirectory(projectDirectory);
 		projectAbsolutePath = projectDirectory.getAbsolutePath();
+		
 		projectName = projectDirectory.getName();
+		logger.info("Project name: " + projectName);
+
 		mainFolder = findMainFolder();
+		logger.info("Main folder: " + mainFolder);
+
 		mainPackage = findMainPackage();
+		logger.info("Main package: " + mainPackage);
+
 		testPackage = findTestPackage();
+		logger.info("Test package: " + testPackage);
 
 		//Uninstalling old app version
 		AndroidToolsExecutorProcess.uninstallPackage(mainPackage);
@@ -73,7 +81,11 @@ public class AndroidProject {
 
 
 		buildVersion = findBuildVersion();
+		logger.info("Build tools version: " + buildVersion);
+
 		compileVersion = findCompileVersion();
+		logger.info("Compile version: " + compileVersion);
+		
 		unitTestTask = findTask(unitTaskPattern);
 		instrumentationTestTask = findTask(instrumentationTaskPattern);
 		activateTestLogging();
@@ -286,16 +298,14 @@ public class AndroidProject {
 	}
 
 	private String findMainFolder() throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader(projectAbsolutePath + "/settings.gradle"));
-		Pattern p = Pattern.compile("include\\s*\\'\\:([a-zA-Z0-9]+)\\'\\s*\\,?+(.*?)\\s*");
+		List<String> output = AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "-q projects", true);
+		//Pattern p = Pattern.compile("include\\s*\\'\\:([a-zA-Z0-9]+)\\'\\s*\\,?+(.*?)\\s*");
+		Pattern p = Pattern.compile("\\s*.---\\s*Project\\s*\\':(\\[-a-zA-Z_0-9]+)\\'\\s*");
 
-		String line;
-		while((line = br.readLine()) != null){
+		for(String line : output){
 			Matcher m = p.matcher(line);
-			if(m.matches()){
-				br.close();
+			if(m.matches())
 				return m.group(1);
-			}
 		}
 
 		return "app";
