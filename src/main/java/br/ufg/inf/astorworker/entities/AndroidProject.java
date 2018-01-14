@@ -39,6 +39,7 @@ public class AndroidProject {
 	private String compileVersion;
 	private List<String> failingInstrumentationTestCases;
 	private List<String> failingUnitTestCases;
+	private List<String> subprojects;
 	private boolean unitRegressionTestCasesExist;
 	private boolean instrumentationRegressionTestCasesExist;
 	private Logger logger = Logger.getLogger(AndroidProject.class);
@@ -90,6 +91,7 @@ public class AndroidProject {
 		instrumentationTestTask = findTask(instrumentationTaskPattern);
 		activateTestLogging();
 
+		subprojects = findSubprojects();
 		findDependencies();	
 		flavor = findFlavor();
 		findRegressionTestCases();
@@ -169,6 +171,24 @@ public class AndroidProject {
    		extractAAR(projectAbsolutePath + "/" + mainFolder + "/localrepo");
 	}
 
+	private List<String> findSubprojects() throws Exception {
+		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/settings.gradle")));
+		Pattern p = Pattern.compile("include\\s*\\'([_:a-zA-Z0-9-]+)\\'\\s*\\,?+(.*?)\\s*");
+		String line = null;
+		ArrayList<String> projectsFound = new ArrayList<>();
+
+		while((line = br.readLine()) != null){
+			Matcher m = p.matcher(line);
+			if(m.matches()){
+				String subproject = m.group(1).replace(":","/");
+				logger.info("Subproject: " + subproject);
+				projectsFound.add(subproject);
+			}
+		}
+
+		return projectsFound;
+	}
+
 	private void findDependencies() throws Exception {
 		logger.info("Finding dependencies");
 		saveDependenciesLocally();
@@ -195,49 +215,54 @@ public class AndroidProject {
 		dependencies += FileSystemUtils.fixPath(AndroidToolsExecutorProcess.getAndroidHome() + "/platforms/android-" + compileVersion + "/android.jar");
 	}
 
-
-
 	private String findBuildVersion() throws Exception {
-		Pattern buildVersionPattern = Pattern.compile("\\s*(buildtoolsversion)\\s*(\'|\")([ .0-9]+)(\'|\")\\s*");
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle")));
+		Pattern buildVersionPattern = Pattern.compile("\\s*(buildtoolsversion)\\s*=?\\s*(\'|\")([ .0-9]+)(\'|\")\\s*");
+		ArrayList<BufferedReader> readers = new ArrayList<>();
+		readers.add(new BufferedReader(new FileReader(new File(projectAbsolutePath + "/build.gradle"))));
+		readers.add(new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle"))));
 
 		String line = null;
 		String buildToolsVersion = null ;
 
-		while((line = br.readLine()) != null){
-			Matcher buildVersionMatcher = buildVersionPattern.matcher(line.toLowerCase());
+		for(BufferedReader br : readers) {
+			while((line = br.readLine()) != null){
+				Matcher buildVersionMatcher = buildVersionPattern.matcher(line.toLowerCase());
 
-			if (buildVersionMatcher.matches()) {
-				buildToolsVersion = buildVersionMatcher.group(3);
-				break;
+				if (buildVersionMatcher.matches()) {
+					buildToolsVersion = buildVersionMatcher.group(3);
+					break;
+				}
 			}
+			br.close();
 		}
 		
-		br.close();
+		
 		return buildToolsVersion;
 	}
 
 	private String findCompileVersion() throws Exception {
-		Pattern compileVersionPattern = Pattern.compile("\\s*(compilesdkversion)\\s*([0-9]+)\\s*");
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle")));
+		Pattern compileVersionPattern = Pattern.compile("\\s*(compilesdkversion)\\s*=?\\s*([0-9]+)\\s*");
+		ArrayList<BufferedReader> readers = new ArrayList<>();
+		readers.add(new BufferedReader(new FileReader(new File(projectAbsolutePath + "/build.gradle"))));
+		readers.add(new BufferedReader(new FileReader(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle"))));
 
 		String line = null;
 		String compileVersion = null ;
 
-		while((line = br.readLine()) != null){
-			Matcher compileVersionMatcher = compileVersionPattern.matcher(line.toLowerCase());
+		for(BufferedReader br : readers) {
+			while((line = br.readLine()) != null){
+				Matcher compileVersionMatcher = compileVersionPattern.matcher(line.toLowerCase());
 
-			if (compileVersionMatcher.matches()) {
-				compileVersion = compileVersionMatcher.group(2);
-				break;
+				if (compileVersionMatcher.matches()) {
+					compileVersion = compileVersionMatcher.group(2);
+					break;
+				}
 			}
+			br.close();
 		}
-		
-		br.close();
+
 		return compileVersion;
 	}
-
-	
 
 	private String findTask(Pattern p) throws Exception {
 		List<String> output = AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "tasks", false);
@@ -349,11 +374,16 @@ public class AndroidProject {
 		ConfigurationProperties.setProperty("defaultbin", defaultBin.getAbsolutePath());
 		defaultBin.mkdirs();
 
-		if(flavor == null)
-			FileUtils.copyDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/release"), defaultBin);
-		
-		else
-			FileUtils.copyDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes/" + flavor + "/release"), defaultBin);
+		for(String project : subprojects) {
+			File withoutFlavor = new File(projectAbsolutePath + project + "/build/intermediates/classes/release");
+			File withFlavor = new File(projectAbsolutePath + project + "/build/intermediates/classes/" + flavor + "/release");
+			
+			if(withoutFlavor.exists())
+				FileUtils.copyDirectory(withoutFlavor, defaultBin);			
+
+			else if(withFlavor.exists())
+				FileUtils.copyDirectory(withFlavor, defaultBin);
+		}
 		
 		//Creating the default source dir
 		File defaultSrc = new File("workDir/AstorWorker-" + projectName + "/default/src");
