@@ -1,6 +1,10 @@
 # AstorWorker
 The second half of the [Astor4Android](https://github.com/kayquesousa/astor4android).
 
+Contacts:  
+Kayque de S. Teixeira - kayque23@gmail.com  
+Celso G Camilo-Junior - celsocamilo@gmail.com  
+
 ## Compilation
 
 1. Install Android SDK, JDK 1.8 and Maven.
