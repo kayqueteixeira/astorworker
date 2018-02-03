@@ -47,17 +47,17 @@ Celso G Camilo-Junior - celsocamilo@gmail.com
 
 	Where AVDNAME is a name of your choice.
 
-### Execute the emulator
+### Start the emulator
 
-1. To run the headless emulator, run these commands:
+To start the headless emulator, run these commands:
 
 	`export QEMU_AUDIO_DRV=none`  
 	`cd $ANDROID_HOME/tools`  
 	`sudo -b ./emulator -avd AVDNAME -no-skin -no-window -no-boot-anim`  
 
-### Shutdown the emulator
+### Stop the emulator
 
-1. To shutdown the headless emulator, run this command:
+To stop the headless emulator, run this command:
 
 	`sudo printf 'auth %s\nkill\n' $(sudo cat ~/.emulator_console_auth_token) | netcat localhost 5554`
 
@@ -75,7 +75,8 @@ AstorWorker has the following command line arguments:
 | androidsdk | Location of the Android SDK folder. Usually this argument is set to $ANDROID_HOME. |
 
 To run AstorWorker, run this command (replacing `<arguments>` with the actual arguments):
-   `mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="<arguments>"`  
+
+   				mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="<arguments>"  
 
    Example:  
 
