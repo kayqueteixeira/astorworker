@@ -15,7 +15,7 @@ Celso G Camilo-Junior - celsocamilo@gmail.com
 	`export ANDROID_HOME=/home/kayquesousa/Android/Sdk`  
 	`export JAVA_HOME=/home/kayquesousa/jdk1.8.0_131`  
 
-4. Clone the AstorWorker repository and compile it using Maven:
+3. Clone the AstorWorker repository and compile it using Maven:
 	
 	`git clone https://github.com/kayquesousa/astorworker.git`  
 	`cd astorworker`  
@@ -31,7 +31,7 @@ Celso G Camilo-Junior - celsocamilo@gmail.com
 
 2. Get the system image list:
 
-	`./sdkmanager --list | grep "system-image"`  
+	`./sdkmanager --list --verbose | grep "system-image"`  
 
 3. Select a system image version of your preference from the list.
 
@@ -49,7 +49,7 @@ Celso G Camilo-Junior - celsocamilo@gmail.com
 
 ### Execute the emulator
 
-1. To run the headless emulator, execute these commands:
+1. To run the headless emulator, run these commands:
 
 	`export QEMU_AUDIO_DRV=none`  
 	`cd $ANDROID_HOME/tools`  
@@ -57,48 +57,32 @@ Celso G Camilo-Junior - celsocamilo@gmail.com
 
 ### Shutdown the emulator
 
-1. To shutdown the headless emulator, execute this command:
+1. To shutdown the headless emulator, run this command:
 
 	`sudo printf 'auth %s\nkill\n' $(sudo cat ~/.emulator_console_auth_token) | netcat localhost 5554`
 
 
 ## Execution 
 
-AstorWorker have the following command line arguments:
+AstorWorker has the following command line arguments:
 
 | Argument | Description |
 | --- | --- |
-| hostip | IP of the host. Host of the machine running Astor4Android. | 
-| hostport | Port used to locate Astor4Android at the host. |
-| workerip | IP of the machine the AstorWorker will execute. |
-| workerport | Port used to locate AstorWorker at it's machine. |
-| platformtools | Location of the platform-tools folder. Usually at $ANDROID_HOME/platform-tools. |
-| buildtools | Location of the build-tools folder. Usually at $ANDROID_HOME/build-tools/VERSION.
-| androidjar | Location of the android.jar. android.jar is usually found at $ANDROID_HOME/platforms/android-VERSION/android.jar), where VERSION is a number.
+| hostip | IP of the host machine that is running Astor4Android. | 
+| hostport | Port used to locate the Astor4Android instance at the host. |
+| workerip | IP of the machine the AstorWorker is going to execute. |
+| workerport | Port used to locate the AstorWorker instance at it's machine. |
 | androidsdk | Location of the Android SDK folder. Usually this argument is set to $ANDROID_HOME. |
 
-To execute AstorWorker, follow these instructions:  
-
-1. Build dependencies using Maven and create a file containing their locations separated by a colon:  
-	
-	`mvn  dependency:build-classpath`  
-	`mvn  dependency:build-classpath | egrep -v "(^\[INFO\]|^\[WARNING\])" | tee astorworker-classpath.txt`  
-
-	You can use the same astorworker-classpath.txt for future executions. 
-
-2. Create the local.properties file:
-
-	`echo sdk.dir=$ANDROID_HOME | tee local.properties`  
-
-	You can use the same local.properties for future executions. 
-
-3. Run the command  
-   `java -cp $(cat astorworker-classpath.txt):target/classes br.ufg.inf.astorworker.AstorWorker`  
-   followed by all the other arguments.  
+To run AstorWorker, run this command (replacing `<arguments>` with the actual arguments):
+   `mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="<arguments>"`  
 
    Example:  
 
-			java -cp $(cat astorworker-classpath.txt):target/classes br.ufg.inf.astorworker.AstorWorker -hostip 127.0.0.1 -hostport 6665 -workerip 127.0.0.1 -workerport 6666 -platformtools $ANDROID_HOME/platform-tools -buildtools $ANDROID_HOME/build-tools/25.0.0 -androidjar $ANDROID_HOME/platforms/android-25/android.jar -androidsdk $ANDROID_HOME   
+			mvn exec:java -Dexec.mainClass=br.ufg.inf.astorworker.main.AstorWorker -Dexec.args="-androidsdk $ANDROID_HOME -hostip 192.155.52.54 -hostport 6665 -workerip 192.155.2.52 -workerport 6666"
+
+There's a script called "run" inside the main folder that can be used as a template for a script that starts an instance of AstorWorker.
+  
 
 
 
