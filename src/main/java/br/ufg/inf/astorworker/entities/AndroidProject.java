@@ -1,19 +1,11 @@
 package br.ufg.inf.astorworker.entities;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -52,10 +44,10 @@ public class AndroidProject {
 	public static AndroidProject getInstance() {
 		if(instance == null)
 			instance = new AndroidProject();
-		
+
 		return instance;
 	}
-	
+
 	public void setup(File projectDirectory) throws Exception {
 		this.projectDirectory = projectDirectory;
 		logger.info("Getting project information");
@@ -63,7 +55,7 @@ public class AndroidProject {
 		if(!AndroidToolsExecutorProcess.getOperatingSystem().equals("Windows"))
 			FileSystemUtils.getPermissionsForDirectory(projectDirectory);
 		projectAbsolutePath = projectDirectory.getAbsolutePath();
-		
+
 		projectName = projectDirectory.getName();
 		logger.info("Project name: " + projectName);
 
@@ -86,13 +78,13 @@ public class AndroidProject {
 
 		compileVersion = findCompileVersion();
 		logger.info("Compile version: " + compileVersion);
-		
+
 		unitTestTask = findTask(unitTaskPattern);
 		instrumentationTestTask = findTask(instrumentationTaskPattern);
 		activateTestLogging();
 
 		subprojects = findSubprojects();
-		findDependencies();	
+		findDependencies();
 		flavor = findFlavor();
 		findRegressionTestCases();
 		setupWorkingDirectory();
@@ -110,7 +102,7 @@ public class AndroidProject {
 			instrumentationRegressionTestCasesExist = !output.isEmpty();
 		}
 		else instrumentationRegressionTestCasesExist = false;
-	} 
+	}
 
 	private String findFlavor() throws Exception {
 		List<String> output = FileSystemUtils.listContentsDirectory(new File(projectAbsolutePath + "/" + mainFolder + "/build/intermediates/classes"));
@@ -130,7 +122,19 @@ public class AndroidProject {
 	}
 
 	private void extractAAR(String libLocation) throws Exception {
-		List<String> output = FileSystemUtils.findFilesWithExtension(new File(libLocation), "aar", false);
+		List<String> output;
+		try {
+			output = FileSystemUtils.findFilesWithExtension(new File(libLocation), "aar", false);
+		} catch(Exception e) {
+			logger.error("Error while extracting AAR files, creating dir " + libLocation);
+			File dir = new File(libLocation);
+			boolean created = dir.mkdirs();
+			if(!created){
+				logger.error("Error while creating dir " + libLocation);
+				return;
+			}
+			return;
+		}
 
 		for(String aar : output){
 			String aarFolder = aar.split(".aar")[0];
@@ -146,9 +150,9 @@ public class AndroidProject {
 	private void saveDependenciesLocally() throws Exception {
 		String repositoryFormat = "\n\tmaven {\n\t\turl '%s'\n\t}\n";
 
-		List<String> m2repositories = Arrays.asList(new String[] { 
+		List<String> m2repositories = Arrays.asList(new String[] {
 				ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/android/m2repository/")
-			  , ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/google/m2repository/") });
+				, ConfigurationProperties.getProperty("androidsdk") + FileSystemUtils.fixPath("/extras/google/m2repository/") });
 
 		BufferedWriter out = new BufferedWriter(new FileWriter(new File(projectAbsolutePath + "/" + mainFolder + "/build.gradle"), true));
 
@@ -156,38 +160,43 @@ public class AndroidProject {
 		for(String repository : m2repositories)
 			out.write(String.format(repositoryFormat, repository.replace("\\", "\\\\")));
 		out.write("\n\tmavenLocal()\n}\n\n");
-		
+
 
 		BufferedReader in = new BufferedReader(new FileReader("save.gradle"));
 		String line;
-		while ((line = in.readLine()) != null) 
-            out.write("\n" + line);
+		while ((line = in.readLine()) != null)
+			out.write("\n" + line);
 
-        in.close();
-   		out.close();
+		in.close();
+		out.close();
 
-   		AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "saveDependencies", true);
-   		checkDataBinding();
+		AndroidToolsExecutorProcess.runGradleTask(projectAbsolutePath, "saveDependencies", true);
+		checkDataBinding();
 
-   		extractAAR(projectAbsolutePath + "/" + mainFolder + "/localrepo");
+		extractAAR(projectAbsolutePath + "/" + mainFolder + "/localrepo");
 	}
 
 	private List<String> findSubprojects() throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/settings.gradle")));
-		Pattern p = Pattern.compile("include\\s*\\'([_:a-zA-Z0-9-]+)\\'\\s*\\,?+(.*?)\\s*");
-		String line = null;
-		ArrayList<String> projectsFound = new ArrayList<>();
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(new File(projectAbsolutePath + "/settings.gradle")));
+			Pattern p = Pattern.compile("include\\s*\\'([_:a-zA-Z0-9-]+)\\'\\s*\\,?+(.*?)\\s*");
+			String line = null;
+			ArrayList<String> projectsFound = new ArrayList<>();
 
-		while((line = br.readLine()) != null){
-			Matcher m = p.matcher(line);
-			if(m.matches()){
-				String subproject = m.group(1).replace(":","/");
-				logger.info("Subproject: " + subproject);
-				projectsFound.add(subproject);
+			while((line = br.readLine()) != null){
+				Matcher m = p.matcher(line);
+				if(m.matches()){
+					String subproject = m.group(1).replace(":","/");
+					logger.info("Subproject: " + subproject);
+					projectsFound.add(subproject);
+				}
 			}
-		}
 
-		return projectsFound;
+			return projectsFound;
+		} catch (Exception e) {
+			logger.error("Error finding subprojects", e);
+			return new ArrayList<>();
+		}
 	}
 
 	private void findDependencies() throws Exception {
@@ -247,9 +256,9 @@ public class AndroidProject {
 					libraryVersion = dataBindingLibraryMatcher.group(1);
 					logger.info("Data binding library version: " + libraryVersion);
 					FileUtils.copyFileToDirectory(
-						new File(AndroidToolsExecutorProcess.getAndroidHome() 
-							+ "/extras/android/m2repository/com/android/databinding/library/" + libraryVersion + "/library-" + libraryVersion + ".aar"),
-						new File(projectAbsolutePath + "/" + mainFolder + "/localrepo"));
+							new File(AndroidToolsExecutorProcess.getAndroidHome()
+									+ "/extras/android/m2repository/com/android/databinding/library/" + libraryVersion + "/library-" + libraryVersion + ".aar"),
+							new File(projectAbsolutePath + "/" + mainFolder + "/localrepo"));
 					break;
 				}
 			}
@@ -260,9 +269,9 @@ public class AndroidProject {
 					adapterVersion = dataBindingAdapterMatcher.group(1);
 					logger.info("Data binding adapter version: " + adapterVersion);
 					FileUtils.copyFileToDirectory(
-						new File(AndroidToolsExecutorProcess.getAndroidHome() 
-							+ "/extras/android/m2repository/com/android/databinding/adapters/" + adapterVersion + "/adapters-" + adapterVersion + ".aar"),
-						new File(projectAbsolutePath + "/" + mainFolder + "/localrepo"));
+							new File(AndroidToolsExecutorProcess.getAndroidHome()
+									+ "/extras/android/m2repository/com/android/databinding/adapters/" + adapterVersion + "/adapters-" + adapterVersion + ".aar"),
+							new File(projectAbsolutePath + "/" + mainFolder + "/localrepo"));
 					break;
 				}
 			}
@@ -289,8 +298,8 @@ public class AndroidProject {
 			}
 			br.close();
 		}
-		
-		
+
+
 		return buildToolsVersion;
 	}
 
@@ -324,7 +333,7 @@ public class AndroidProject {
 		for(String line : output) {
 			Matcher m = p.matcher(line.toLowerCase());
 
-			if (m.matches()) 
+			if (m.matches())
 				return line.split("-")[0].trim();
 		}
 		return null;
@@ -357,8 +366,14 @@ public class AndroidProject {
 	private String findMainPackage() throws Exception {
 		Pattern packagePattern = Pattern.compile("\\s*(package)\\s*(=)\\s*(\'|\")([ .a-zA-Z0-9]+)(\'|\")\\s*(.*?)\\s*");
 
-		BufferedReader br = new BufferedReader(new FileReader(
-				new File(projectAbsolutePath + "/" + mainFolder + "/src/main/AndroidManifest.xml")));
+		BufferedReader br = null;
+		try{
+			br = new BufferedReader(new FileReader(
+					new File(projectAbsolutePath + "/" + mainFolder + "/src/main/AndroidManifest.xml")));
+		}catch (FileNotFoundException e){
+			br = new BufferedReader(new FileReader(findManifest(projectAbsolutePath)));
+		}
+
 
 		String line = null;
 		String mainPackage = null ;
@@ -371,9 +386,27 @@ public class AndroidProject {
 				break;
 			}
 		}
-		
+
 		br.close();
 		return mainPackage;
+	}
+
+	private static String findManifest(String path) {
+		File root = new File(path);
+		File[] files = root.listFiles();
+		if (files != null) {
+			for (File file : files) {
+				if (file.isDirectory()) {
+					String manifestPath = findManifest(file.getAbsolutePath());
+					if (manifestPath != null) {
+						return manifestPath;
+					}
+				} else if (file.getName().equals("AndroidManifest.xml")) {
+					return file.getAbsolutePath();
+				}
+			}
+		}
+		return null;
 	}
 
 	private String findMainFolder() throws Exception {
@@ -398,7 +431,7 @@ public class AndroidProject {
 				new File(projectAbsolutePath + "/" + mainFolder + "/src/androidTest"), "java", true);
 
 		return !instrumentationTests.isEmpty();
-	}	
+	}
 
 	public boolean unitTestsExist() throws Exception {
 		if(!(new File(projectAbsolutePath + "/" + mainFolder + "/src/test").exists()))
@@ -411,15 +444,15 @@ public class AndroidProject {
 	}
 
 	private void activateTestLogging() throws Exception {
-   		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
-    	BufferedReader in = new BufferedReader(new FileReader("test.gradle"));
-    	String line;
+		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
+		BufferedReader in = new BufferedReader(new FileReader("test.gradle"));
+		String line;
 
-       	while ((line = in.readLine()) != null) 
-            out.write("\n" + line);
-        
-    	in.close();
-   		out.close();
+		while ((line = in.readLine()) != null)
+			out.write("\n" + line);
+
+		in.close();
+		out.close();
 	}
 
 	private void setupWorkingDirectory() throws Exception {
@@ -431,14 +464,14 @@ public class AndroidProject {
 		for(String project : subprojects) {
 			File withoutFlavor = new File(projectAbsolutePath + project + "/build/intermediates/classes/release");
 			File withFlavor = new File(projectAbsolutePath + project + "/build/intermediates/classes/" + flavor + "/release");
-			
+
 			if(withoutFlavor.exists())
-				FileUtils.copyDirectory(withoutFlavor, defaultBin);			
+				FileUtils.copyDirectory(withoutFlavor, defaultBin);
 
 			else if(withFlavor.exists())
 				FileUtils.copyDirectory(withFlavor, defaultBin);
 		}
-		
+
 		//Creating the default source dir
 		File defaultSrc = new File("workDir/AstorWorker-" + projectName + "/default/src");
 		ConfigurationProperties.setProperty("defaultsrc", defaultSrc.getAbsolutePath());
@@ -448,8 +481,8 @@ public class AndroidProject {
 	}
 
 	private void restoreOriginalSource() throws Exception {
-		FileUtils.copyDirectory(new File(ConfigurationProperties.getProperty("defaultsrc")), 
-								new File((projectAbsolutePath + "/" + mainFolder + "/src/main/java/")));
+		FileUtils.copyDirectory(new File(ConfigurationProperties.getProperty("defaultsrc")),
+				new File((projectAbsolutePath + "/" + mainFolder + "/src/main/java/")));
 	}
 
 	public void applyVariant(File variant) throws Exception {
@@ -458,15 +491,15 @@ public class AndroidProject {
 	}
 
 	public void activateCodeCoverage() throws IOException {
-   		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
-    	BufferedReader in = new BufferedReader(new FileReader("coverage.gradle"));
-    	String line;
+		BufferedWriter out = new BufferedWriter(new FileWriter(projectAbsolutePath + "/" + mainFolder + "/build.gradle", true));
+		BufferedReader in = new BufferedReader(new FileReader("coverage.gradle"));
+		String line;
 
-       	while ((line = in.readLine()) != null) 
-            out.write("\n" + line);
-        
-    	in.close();
-   		out.close();
+		while ((line = in.readLine()) != null)
+			out.write("\n" + line);
+
+		in.close();
+		out.close();
 	}
 
 
@@ -480,7 +513,7 @@ public class AndroidProject {
 
 	public List<String> runAllInstrumentationTests() throws Exception {
 		return AndroidToolsExecutorProcess.runInstrumentationTests(projectAbsolutePath, instrumentationTestTask);
-	}	
+	}
 
 	public List<String> runFailingUnitTests() throws Exception {
 		return AndroidToolsExecutorProcess.runUnitTests(projectAbsolutePath, unitTestTask, failingUnitTestCases);
