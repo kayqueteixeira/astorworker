@@ -1,12 +1,12 @@
 task saveDependencies(type: Copy) {
-    project.configurations.findAll().each { config ->
+    project.configurations.findAll{ it.canBeResolved }.each { config ->
             config.copy().resolvedConfiguration.getResolvedArtifacts().each { artifact ->
                 from artifact.file
                 into 'localrepo'
             }
     }
 
-    project.buildscript.configurations.findAll().each { config ->
+    project.buildscript.configurations.findAll{ it.canBeResolved }.each { config ->
             config.copy().resolvedConfiguration.getResolvedArtifacts().each { artifact ->
                 from artifact.file
                 into 'localrepo'
